@@ -1,0 +1,88 @@
+import { ChartColumn, Dumbbell, Gauge, GraduationCap, Moon, Sun, Zap } from 'lucide-react'
+import { Link } from '../lib/router'
+import { useProgress } from '../store/progress'
+import { Logo } from './Logo'
+
+export const NAV = [
+  { to: '/course', label: 'Курс', icon: GraduationCap },
+  { to: '/practice', label: 'Тренировка', icon: Dumbbell },
+  { to: '/test', label: 'Тест уровня', icon: Gauge },
+  { to: '/progress', label: 'Прогресс', icon: ChartColumn },
+]
+
+const isActive = (path: string, to: string) =>
+  path === to || (to === '/course' && (path.startsWith('/module') || path.startsWith('/task') || path === '/daily'))
+
+export function Header({ path, theme }: { path: string; theme: 'light' | 'dark' }) {
+  const xp = useProgress((s) => s.xp)
+  const setTheme = useProgress((s) => s.setTheme)
+  return (
+    <header className="sticky top-0 z-30 border-b border-line/70 bg-bg/80 backdrop-blur-md">
+      <div className="mx-auto flex h-16 max-w-6xl items-center gap-4 px-4 sm:px-6">
+        <Link to="/" className="shrink-0 rounded-lg" aria-label="На главную">
+          <Logo />
+        </Link>
+        <nav className="ml-6 hidden items-center gap-1 md:flex" aria-label="Основная навигация">
+          {NAV.map((item) => (
+            <Link
+              key={item.to}
+              to={item.to}
+              className={`rounded-lg px-3 py-2 text-sm font-semibold transition ${
+                isActive(path, item.to) ? 'bg-accent-soft text-accent' : 'text-muted hover:bg-surface-2 hover:text-ink'
+              }`}
+            >
+              {item.label}
+            </Link>
+          ))}
+        </nav>
+        <div className="ml-auto flex items-center gap-2">
+          <Link to="/progress" className="hidden items-center gap-1.5 rounded-full border border-line bg-surface px-3 py-1.5 text-xs font-bold text-ink sm:inline-flex" title="Опыт">
+            <Zap size={14} className="text-warn" fill="currentColor" />
+            {xp} XP
+          </Link>
+          <button
+            type="button"
+            onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+            className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-line bg-surface text-muted transition hover:text-ink"
+            aria-label={theme === 'dark' ? 'Включить светлую тему' : 'Включить тёмную тему'}
+            title={theme === 'dark' ? 'Светлая тема' : 'Тёмная тема'}
+          >
+            {theme === 'dark' ? <Sun size={17} /> : <Moon size={17} />}
+          </button>
+        </div>
+      </div>
+    </header>
+  )
+}
+
+export function MobileNav({ path }: { path: string }) {
+  return (
+    <nav
+      className="fixed inset-x-0 bottom-0 z-30 border-t border-line bg-surface/95 pb-[env(safe-area-inset-bottom)] backdrop-blur-md md:hidden"
+      aria-label="Навигация"
+    >
+      <div className="grid grid-cols-4">
+        {NAV.map(({ to, label, icon: Icon }) => {
+          const active = isActive(path, to)
+          return (
+            <Link key={to} to={to} className={`flex flex-col items-center gap-1 py-2.5 text-[11px] font-semibold ${active ? 'text-accent' : 'text-muted'}`}>
+              <Icon size={20} strokeWidth={active ? 2.4 : 2} />
+              {label}
+            </Link>
+          )
+        })}
+      </div>
+    </nav>
+  )
+}
+
+export function Footer() {
+  return (
+    <footer className="mt-20 border-t border-line">
+      <div className="mx-auto flex max-w-6xl flex-col gap-4 px-4 py-8 text-sm text-muted sm:flex-row sm:items-center sm:justify-between sm:px-6">
+        <Logo compact />
+        <p>Онлайн-курс логического мышления · прогресс хранится в вашем браузере</p>
+      </div>
+    </footer>
+  )
+}

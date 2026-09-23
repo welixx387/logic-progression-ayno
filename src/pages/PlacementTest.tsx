@@ -1,0 +1,155 @@
+import { ArrowRight, Clock, Gauge, ListChecks, RotateCcw } from 'lucide-react'
+import { useEffect, useState } from 'react'
+import { TaskCard } from '../components/TaskCard'
+import { LevelBars, Page, ProgressBar } from '../components/ui'
+import { LEVELS, levelInfo } from '../content/levels'
+import { tasksOf } from '../lib/catalog'
+import { Link } from '../lib/router'
+import { useProgress } from '../store/progress'
+import type { Level, ModuleId, Task } from '../types'
+
+const PER_LEVEL = 3
+/** Логические таблицы слишком длинные для теста — их не берём. */
+const TEST_MODULES: ModuleId[] = ['sequences', 'letters', 'odd', 'analogies', 'syllogisms', 'order', 'knights', 'symbols', 'matrices', 'time', 'combinatorics', 'classic']
+
+function pick<T>(items: T[]): T {
+  return items[Math.floor(Math.random() * items.length)]
+}
+
+function buildTest(): Task[] {
+  const tasks: Task[] = []
+  for (const l of LEVELS) {
+    const modules = [...TEST_MODULES].sort(() => Math.random() - 0.5).slice(0, PER_LEVEL)
+    for (const m of modules) tasks.push(pick(tasksOf(m, l.id)))
+  }
+  return tasks
+}
+
+/** Уровень — самый высокий, на котором и на всех предыдущих решено хотя бы 2 из 3. */
+function levelFrom(score: number[]): Level {
+  let level = 1
+  for (let i = 0; i < score.length; i++) {
+    if (score[i] >= 2) level = i + 1
+    else break
+  }
+  return level as Level
+}
+
+export function PlacementTest() {
+  const placement = useProgress((s) => s.placement)
+  const setPlacement = useProgress((s) => s.setPlacement)
+  const [test, setTest] = useState<Task[] | null>(null)
+  const [answers, setAnswers] = useState<boolean[]>([])
+
+  const start = () => {
+    setTest(buildTest())
+    setAnswers([])
+  }
+
+  const scoreOf = (a: boolean[]) => LEVELS.map((_, i) => a.slice(i * PER_LEVEL, (i + 1) * PER_LEVEL).filter(Boolean).length)
+
+  // Как только тест пройден, запоминаем результат — он открывает уровни в курсе.
+  useEffect(() => {
+    if (test && answers.length === test.length) {
+      const score = scoreOf(answers)
+      setPlacement(levelFrom(score), score)
+    }
+  }, [answers, test, setPlacement])
+
+  if (test && answers.length >= test.length) {
+    const score = scoreOf(answers)
+    const level = levelFrom(score)
+    const info = levelInfo(level)
+    const total = answers.filter(Boolean).length
+    return (
+      <Page className="max-w-3xl py-10">
+        <p className="eyebrow">Результат теста</p>
+        <h1 className="h-display mt-2 text-3xl">
+          Ваш уровень: <span className={info.text}>{level} · {info.name}</span>
+        </h1>
+        <p className="mt-3 text-muted">
+          Правильных ответов: {total} из {test.length}. {info.description}
+        </p>
+        <div className="card mt-6 space-y-4 p-5 sm:p-6">
+          {LEVELS.map((l, i) => (
+            <div key={l.id} className="flex items-center gap-4">
+              <span className={`flex w-40 shrink-0 items-center gap-2 text-sm font-bold ${l.text}`}>
+                <LevelBars level={l.id} /> {l.id}. {l.name}
+              </span>
+              <ProgressBar value={score[i]} max={PER_LEVEL} className="flex-1" color={l.bg} />
+              <span className="w-10 text-right text-sm font-semibold text-muted">
+                {score[i]}/{PER_LEVEL}
+              </span>
+            </div>
+          ))}
+        </div>
+        <p className="mt-4 text-sm text-muted">
+          {level === 1
+            ? 'Начните с уровня 1 во всех темах — следующие уровни откроются по мере решения задач.'
+            : `Уровни 1–${level} теперь открыты во всех темах. Следующие уровни откроются по мере решения задач.`}
+        </p>
+        <div className="mt-6 flex flex-wrap gap-3">
+          <Link to="/course" className="btn-primary px-6 py-3">
+            Перейти к курсу <ArrowRight size={17} />
+          </Link>
+          <button className="btn-ghost px-6 py-3" onClick={start}>
+            <RotateCcw size={16} /> Пройти заново
+          </button>
+        </div>
+      </Page>
+    )
+  }
+
+  if (test) {
+    const i = answers.length
+    const task = test[i]
+    return (
+      <Page className="max-w-3xl py-6 sm:py-10">
+        <div className="flex items-center justify-between">
+          <button className="text-sm font-semibold text-muted hover:text-ink" onClick={() => setTest(null)}>
+            ← Прервать тест
+          </button>
+          <span className="text-sm font-bold">
+            Вопрос {i + 1} из {test.length}
+          </span>
+        </div>
+        <ProgressBar value={i} max={test.length} className="mt-3" />
+        <div className="mt-5">
+          <TaskCard key={`${i}-${task.id}`} task={task} mode="test" autoFocus onResult={({ correct }) => setAnswers((a) => [...a, correct])} />
+        </div>
+        <p className="mt-4 text-center text-xs text-faint">В тесте одна попытка на вопрос и нет подсказок. Разборы задач доступны в курсе.</p>
+      </Page>
+    )
+  }
+
+  return (
+    <Page className="max-w-3xl py-10">
+      <p className="eyebrow">Тест уровня</p>
+      <h1 className="h-display mt-2 text-3xl">С какого уровня начать?</h1>
+      <p className="mt-3 text-lg leading-relaxed text-muted">
+        Тест проверит разные виды логики — от числовых рядов до силлогизмов — и откроет подходящие уровни во всех темах курса.
+      </p>
+      <div className="mt-6 grid gap-3 sm:grid-cols-3">
+        {[
+          { icon: ListChecks, title: '15 задач', text: 'по 3 на каждый уровень' },
+          { icon: Clock, title: '10–15 минут', text: 'без ограничения времени' },
+          { icon: Gauge, title: 'Одна попытка', text: 'без подсказок и разборов' },
+        ].map(({ icon: Icon, title, text }) => (
+          <div key={title} className="card p-4">
+            <Icon size={20} className="text-accent" />
+            <div className="mt-2 font-bold">{title}</div>
+            <div className="text-sm text-muted">{text}</div>
+          </div>
+        ))}
+      </div>
+      {placement && (
+        <p className="mt-5 rounded-xl bg-surface-2 px-4 py-3 text-sm text-muted">
+          Вы уже проходили тест: уровень {placement.level} «{levelInfo(placement.level).name}». Можно пройти ещё раз — результат обновится.
+        </p>
+      )}
+      <button className="btn-primary mt-6 px-6 py-3 text-base" onClick={start}>
+        Начать тест <ArrowRight size={18} />
+      </button>
+    </Page>
+  )
+}
