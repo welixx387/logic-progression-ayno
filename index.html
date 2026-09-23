@@ -19,7 +19,9 @@
         try {
           var raw = localStorage.getItem('logic-progression-ayno')
           var theme = raw ? JSON.parse(raw).state.settings.theme : 'system'
-          var dark = theme === 'dark' || (theme !== 'light' && window.matchMedia('(prefers-color-scheme: dark)').matches)
+          var host = document.documentElement.getAttribute('data-theme')
+          var system = host ? host === 'dark' : window.matchMedia('(prefers-color-scheme: dark)').matches
+          var dark = theme === 'dark' || (theme !== 'light' && system)
           if (dark) document.documentElement.classList.add('dark')
         } catch (e) {}
       })()

@@ -17,7 +17,7 @@ export function Header({ path, theme }: { path: string; theme: 'light' | 'dark' 
   const xp = useProgress((s) => s.xp)
   const setTheme = useProgress((s) => s.setTheme)
   return (
-    <header className="sticky top-0 z-30 border-b border-line/70 bg-bg/80 backdrop-blur-md">
+    <header className="sticky top-0 z-30 border-b border-line/70 bg-bg/80 pt-[env(safe-area-inset-top)] backdrop-blur-md">
       <div className="mx-auto flex h-16 max-w-6xl items-center gap-4 px-4 sm:px-6">
         <Link to="/" className="shrink-0 rounded-lg" aria-label="На главную">
           <Logo />

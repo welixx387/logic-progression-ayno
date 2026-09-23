@@ -52,6 +52,7 @@ export function Progress() {
   const achs = achievements(state, streak.best)
   const fileRef = useRef<HTMLInputElement>(null)
   const [message, setMessage] = useState<string | null>(null)
+  const [confirmReset, setConfirmReset] = useState(false)
 
   const exportData = () => {
     const { records, xp, days, run, bestRun, placement, lastTaskId } = useProgress.getState()
@@ -207,17 +208,28 @@ export function Progress() {
               e.target.value = ''
             }}
           />
-          <button
-            className="btn-quiet text-bad hover:text-bad"
-            onClick={() => {
-              if (window.confirm('Сбросить весь прогресс? Это действие нельзя отменить.')) {
-                reset()
-                setMessage('Прогресс сброшен.')
-              }
-            }}
-          >
-            <RotateCcw size={16} /> Сбросить прогресс
-          </button>
+          {confirmReset ? (
+            <span className="flex flex-wrap items-center gap-2 rounded-xl bg-bad-soft px-3 py-1.5 text-sm font-semibold text-bad">
+              Весь прогресс будет удалён.
+              <button
+                className="btn bg-bad px-3 py-1.5 text-white"
+                onClick={() => {
+                  reset()
+                  setConfirmReset(false)
+                  setMessage('Прогресс сброшен.')
+                }}
+              >
+                Сбросить
+              </button>
+              <button className="btn-quiet px-3 py-1.5" onClick={() => setConfirmReset(false)}>
+                Отмена
+              </button>
+            </span>
+          ) : (
+            <button className="btn-quiet text-bad hover:text-bad" onClick={() => setConfirmReset(true)}>
+              <RotateCcw size={16} /> Сбросить прогресс
+            </button>
+          )}
         </div>
         {message && <p className="mt-3 text-sm font-semibold text-accent">{message}</p>}
       </section>
