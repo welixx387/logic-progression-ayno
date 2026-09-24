@@ -1,15 +1,17 @@
 import { ArrowRight, CircleCheck, CircleX, Dumbbell, Infinity as InfinityIcon, Loader2, Lock, RotateCcw, Shuffle, Sparkles, Trophy, Zap } from 'lucide-react'
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { CategoryTabs } from '../components/CategoryTabs'
 import { Burst, CountUp, delay } from '../components/Motion'
 import { TaskCard } from '../components/TaskCard'
 import { LevelBadge, MODULE_ICONS, Page, ProgressBar } from '../components/ui'
+import { CATEGORY_BY_ID, isCategory } from '../content/categories'
 import { LEVELS } from '../content/levels'
-import { MODULE_BY_ID, MODULES } from '../content/modules'
+import { MODULE_BY_ID, MODULES, modulesOf } from '../content/modules'
 import { tasksOf } from '../lib/catalog'
 import { generateTask, NO_GENERATOR } from '../lib/endless'
 import { Link } from '../lib/router'
 import { isUnlocked, useProgress } from '../store/progress'
-import type { Level, ModuleId, Task } from '../types'
+import type { CategoryId, Level, ModuleId, Task } from '../types'
 
 type Source = 'new' | 'course'
 
@@ -44,12 +46,23 @@ export function Practice({ query }: { query: URLSearchParams }) {
   const state = useProgress()
   const markSeen = useProgress((s) => s.markSeen)
 
-  // Настройки можно передать ссылкой: /practice?gen=1&m=sequences&l=2&start=1
+  // Настройки можно передать ссылкой: /practice?gen=1&c=strategy&l=2&start=1 или …&m=sequences…
   const preModules = (query.get('m') ?? '').split(',').filter(isModule)
   const preLevel = Number(query.get('l'))
+  const preCategory = query.get('c')
+  const [category, setCategory] = useState<CategoryId>(
+    isCategory(preCategory) ? preCategory : preModules.length ? MODULE_BY_ID[preModules[0]].category : 'logic',
+  )
+  const cat = CATEGORY_BY_ID[category]
+  const catModules = modulesOf(category)
   const [source, setSource] = useState<Source>(query.get('gen') === '0' ? 'course' : 'new')
-  const [level, setLevel] = useState<Level>((preLevel >= 1 && preLevel <= 5 ? preLevel : state.placement?.level ?? 1) as Level)
-  const [modules, setModules] = useState<ModuleId[]>(preModules.length ? preModules : MODULES.map((m) => m.id))
+  const [level, setLevel] = useState<Level>((preLevel >= 1 && preLevel <= 5 ? preLevel : state.placements[category]?.level ?? 1) as Level)
+  const [modules, setModules] = useState<ModuleId[]>(preModules.length ? preModules : catModules.map((m) => m.id))
+
+  const chooseCategory = (c: CategoryId) => {
+    setCategory(c)
+    setModules(modulesOf(c).map((m) => m.id))
+  }
   const [count, setCount] = useState<number | null>(source === 'new' ? null : 10)
   const [onlyNew, setOnlyNew] = useState(true)
 
@@ -308,7 +321,11 @@ export function Practice({ query }: { query: URLSearchParams }) {
     <Page className="max-w-4xl py-8 sm:py-10">
       <p className="eyebrow">Тренировка</p>
       <h1 className="h-display mt-2 text-2xl sm:text-3xl">Решайте сколько хотите</h1>
-      <p className="mt-2 text-muted">Выберите уровень и темы. Опыт начисляется так же, как в курсе.</p>
+      <p className="mt-2 text-muted">Выберите направление, уровень и темы. Опыт начисляется так же, как в курсе.</p>
+
+      <div className="mt-6">
+        <CategoryTabs value={category} onChange={chooseCategory} />
+      </div>
 
       <div className="mt-6 grid animate-fade-up gap-3 sm:grid-cols-2" role="radiogroup" aria-label="Откуда брать задачи">
         {(
@@ -359,12 +376,12 @@ export function Practice({ query }: { query: URLSearchParams }) {
 
         <div className="mt-6 flex items-center justify-between gap-3">
           <h2 className="font-bold">Темы</h2>
-          <button className="text-sm font-semibold text-accent" onClick={() => setModules(modules.length === MODULES.length ? [] : MODULES.map((m) => m.id))}>
-            {modules.length === MODULES.length ? 'Снять все' : 'Выбрать все'}
+          <button className={`text-sm font-semibold ${cat.text}`} onClick={() => setModules(modules.length === catModules.length ? [] : catModules.map((m) => m.id))}>
+            {modules.length === catModules.length ? 'Снять все' : 'Выбрать все'}
           </button>
         </div>
         <div className="mt-3 flex flex-wrap gap-2">
-          {MODULES.map((m) => {
+          {catModules.map((m) => {
             const Icon = MODULE_ICONS[m.id]
             const on = modules.includes(m.id)
             const open = source === 'new' || isUnlocked(state, m.id, level)

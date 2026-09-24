@@ -62,7 +62,7 @@ export function useCloudSync(userId: string | null, onStatus: (status: 'syncing'
     run()
 
     const unsubscribeStore = useProgress.subscribe((s, prev) => {
-      if (s.records !== prev.records || s.seen !== prev.seen || s.placement !== prev.placement || s.days !== prev.days) schedule()
+      if (s.records !== prev.records || s.seen !== prev.seen || s.placements !== prev.placements || s.days !== prev.days) schedule()
     })
     const unsubscribeRemote = subscribeProgress(userId, (remote) => {
       useProgress.getState().mergeRemote(remote)

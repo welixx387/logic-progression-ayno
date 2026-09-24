@@ -17,6 +17,18 @@ import { time } from '../src/generators/time.ts'
 import { combinatorics } from '../src/generators/combinatorics.ts'
 import { zebra } from '../src/generators/zebra.ts'
 import { classic } from '../src/generators/classic.ts'
+import { games } from '../src/generators/games.ts'
+import { planning } from '../src/generators/planning.ts'
+import { decisions } from '../src/generators/decisions.ts'
+import { opponent } from '../src/generators/opponent.ts'
+import { tables } from '../src/generators/tables.ts'
+import { percent } from '../src/generators/percent.ts'
+import { probability } from '../src/generators/probability.ts'
+import { stats } from '../src/generators/stats.ts'
+import { emotions } from '../src/generators/emotions.ts'
+import { recognize } from '../src/generators/recognize.ts'
+import { regulation } from '../src/generators/regulation.ts'
+import { empathy } from '../src/generators/empathy.ts'
 
 const generators: [string, () => Task[]][] = [
   ['sequences', sequences],
@@ -32,6 +44,18 @@ const generators: [string, () => Task[]][] = [
   ['combinatorics', combinatorics],
   ['zebra', zebra],
   ['classic', classic],
+  ['games', games],
+  ['planning', planning],
+  ['decisions', decisions],
+  ['opponent', opponent],
+  ['tables', tables],
+  ['percent', percent],
+  ['probability', probability],
+  ['stats', stats],
+  ['emotions', emotions],
+  ['recognize', recognize],
+  ['regulation', regulation],
+  ['empathy', empathy],
 ]
 
 const only = process.argv[2]
@@ -53,6 +77,8 @@ for (const t of tasks) {
   if (!t.prompt.trim()) problems.push(`${t.id}: пустое условие`)
   if (!t.solution.trim()) problems.push(`${t.id}: нет решения`)
   if (/undefined|NaN|null|\[object/.test(JSON.stringify(t))) problems.push(`${t.id}: подозрительный текст`)
+  // Незаполненные шаблоны вида {N} или {он|она}.
+  if (/[{}]/.test(JSON.stringify([t.prompt, t.solution, t.hint ?? '', t.options ?? [], t.answer]))) problems.push(`${t.id}: незаполненный шаблон`)
   if (t.kind === 'choice') {
     if (!t.options || t.options.length < 2) problems.push(`${t.id}: мало вариантов`)
     else {

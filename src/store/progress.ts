@@ -1,12 +1,14 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
+import { CATEGORIES } from '../content/categories'
 import { levelInfo } from '../content/levels'
+import { MODULE_BY_ID, MODULES } from '../content/modules'
 import { tasksOf, TASKS } from '../lib/catalog'
 import { dayKey } from '../lib/dates'
-import { mergeProgress, sameProgress, type ProgressPayload, type TaskRecord } from '../lib/merge'
-import type { Level, ModuleId, Task } from '../types'
+import { mergeProgress, sameProgress, type Placement, type Placements, type ProgressPayload, type TaskRecord } from '../lib/merge'
+import type { CategoryId, Level, ModuleId, Task } from '../types'
 
-export type { TaskRecord } from '../lib/merge'
+export type { Placement, TaskRecord } from '../lib/merge'
 
 export type Theme = 'system' | 'light' | 'dark'
 
@@ -24,7 +26,8 @@ interface ProgressState {
   /** Серия задач подряд с первой попытки. */
   run: number
   bestRun: number
-  placement: { level: Level; at: number; score: number[] } | null
+  /** Результаты теста уровня по направлениям. */
+  placements: Placements
   lastTaskId: string | null
   /** Отпечатки уже показанных сгенерированных заданий — чтобы они не повторялись. */
   seen: string[]
@@ -35,7 +38,7 @@ interface ProgressState {
   reveal: (task: Task) => void
   visit: (task: Task) => void
   markSeen: (key: string) => void
-  setPlacement: (level: Level, score: number[]) => void
+  setPlacement: (category: CategoryId, level: Level, score: number[]) => void
   setTheme: (theme: Theme) => void
   setOpenAll: (open: boolean) => void
   reset: () => void
@@ -50,7 +53,7 @@ const empty = () => ({
   days: {} as Record<string, number>,
   run: 0,
   bestRun: 0,
-  placement: null,
+  placements: {} as Placements,
   lastTaskId: null,
   seen: [] as string[],
 })
@@ -106,7 +109,7 @@ export const useProgress = create<ProgressState>()(
       visit: (task) => set({ lastTaskId: task.id }),
       markSeen: (key) => set((s) => (s.seen.includes(key) ? s : { seen: [...s.seen, key] })),
 
-      setPlacement: (level, score) => set({ placement: { level, score, at: Date.now() } }),
+      setPlacement: (category, level, score) => set((s) => ({ placements: { ...s.placements, [category]: { level, score, at: Date.now() } } })),
       setTheme: (theme) => set((s) => ({ settings: { ...s.settings, theme } })),
       setOpenAll: (openAll) => set((s) => ({ settings: { ...s.settings, openAll } })),
       reset: () => set({ ...empty() }),
@@ -120,7 +123,7 @@ export const useProgress = create<ProgressState>()(
           days: d.days ?? {},
           run: d.run ?? 0,
           bestRun: d.bestRun ?? 0,
-          placement: d.placement ?? null,
+          placements: placementsFrom(d),
           lastTaskId: d.lastTaskId ?? null,
           seen: Array.isArray(d.seen) ? d.seen : [],
         })
@@ -131,20 +134,27 @@ export const useProgress = create<ProgressState>()(
         const local = payloadOf(get())
         const merged = mergeProgress(local, remote)
         if (sameProgress(local, merged)) return false
-        set(merged)
+        const { placement: _legacy, placements, ...rest } = merged
+        set({ ...rest, placements: placements ?? {} })
         return true
       },
     }),
     {
       name: 'logic-progression-ayno',
-      version: 1,
+      version: 2,
+      // Версия 1 хранила один результат теста (он был про логику).
+      migrate: (persisted, version) => {
+        const p = persisted as Record<string, unknown>
+        if (version < 2) return { ...p, placements: placementsFrom(p) }
+        return p as never
+      },
       partialize: (s) => ({
         records: s.records,
         xp: s.xp,
         days: s.days,
         run: s.run,
         bestRun: s.bestRun,
-        placement: s.placement,
+        placements: s.placements,
         lastTaskId: s.lastTaskId,
         seen: s.seen,
         settings: s.settings,
@@ -155,10 +165,30 @@ export const useProgress = create<ProgressState>()(
 
 // ——— Производные значения ———
 
-/** Часть состояния, которая сохраняется в аккаунте и синхронизируется. */
-export function payloadOf(s: Pick<ProgressState, keyof ProgressPayload>): ProgressPayload {
-  return { records: s.records, xp: s.xp, days: s.days, run: s.run, bestRun: s.bestRun, placement: s.placement, seen: s.seen }
+/** Результаты теста из сохранения любой версии. */
+function placementsFrom(d: { placements?: unknown; placement?: unknown }): Placements {
+  const out: Placements = { ...((d.placements as Placements | undefined) ?? {}) }
+  const legacy = d.placement as Placement | null | undefined
+  if (legacy && (!out.logic || legacy.at > out.logic.at)) out.logic = legacy
+  return out
 }
+
+/** Часть состояния, которая сохраняется в аккаунте и синхронизируется. */
+export function payloadOf(s: Pick<ProgressState, 'records' | 'xp' | 'days' | 'run' | 'bestRun' | 'placements' | 'seen'>): ProgressPayload {
+  return {
+    records: s.records,
+    xp: s.xp,
+    days: s.days,
+    run: s.run,
+    bestRun: s.bestRun,
+    // Старые версии сайта знают только это поле — пусть видят результат по логике.
+    placement: s.placements.logic ?? null,
+    placements: s.placements,
+    seen: s.seen,
+  }
+}
+
+export const categoryOf = (module: ModuleId): CategoryId => MODULE_BY_ID[module].category
 
 export type TaskStatus = 'new' | 'tried' | 'solved' | 'perfect' | 'revealed'
 
@@ -179,16 +209,17 @@ export function unlockNeed(module: ModuleId, level: Level) {
   return Math.ceil(tasksOf(module, (level - 1) as Level).length / 2)
 }
 
-export function isUnlocked(state: Pick<ProgressState, 'records' | 'placement' | 'settings'>, module: ModuleId, level: Level) {
+export function isUnlocked(state: Pick<ProgressState, 'records' | 'placements' | 'settings'>, module: ModuleId, level: Level) {
   if (level === 1 || state.settings.openAll) return true
-  if (state.placement && state.placement.level >= level) return true
+  const placement = state.placements[categoryOf(module)]
+  if (placement && placement.level >= level) return true
   const prev = tasksOf(module, (level - 1) as Level)
   return solvedCount(state.records, prev) >= unlockNeed(module, level)
 }
 
 /** Следующая нерешённая задача в теме, начиная с открытых уровней. */
-export function nextTaskIn(state: Pick<ProgressState, 'records' | 'placement' | 'settings'>, module: ModuleId): Task | null {
-  const start = state.placement?.level ?? 1
+export function nextTaskIn(state: Pick<ProgressState, 'records' | 'placements' | 'settings'>, module: ModuleId): Task | null {
+  const start = state.placements[categoryOf(module)]?.level ?? 1
   const order = [start, 1, 2, 3, 4, 5].filter((v, i, a) => a.indexOf(v) === i) as Level[]
   for (const level of order) {
     if (!isUnlocked(state, module, level)) continue
@@ -214,18 +245,20 @@ export interface Achievement {
   done: boolean
 }
 
-export function achievements(state: Pick<ProgressState, 'records' | 'placement' | 'bestRun'>, streakBest: number): Achievement[] {
+export function achievements(state: Pick<ProgressState, 'records' | 'placements' | 'bestRun'>, streakBest: number): Achievement[] {
   const recs = Object.entries(state.records)
   const solved = recs.filter(([, r]) => r.solved)
   const solvedIds = new Set(solved.map(([id]) => id))
-  const moduleDone = (['sequences', 'letters', 'odd', 'analogies', 'syllogisms', 'order', 'knights', 'symbols', 'matrices', 'time', 'combinatorics', 'zebra', 'classic'] as ModuleId[]).some(
-    (m) => tasksOf(m).every((t) => solvedIds.has(t.id)),
-  )
+  const moduleDone = MODULES.some((m) => tasksOf(m.id).every((t) => solvedIds.has(t.id)))
   const expert = solved.some(([id]) => id.includes('-5-'))
+  // Сгенерированные задачи узнаём по модулю через банк: у них id вида g-…, поэтому считаем только задачи курса.
+  const solvedTasks = TASKS.filter((t) => solvedIds.has(t.id))
+  const allDirections = CATEGORIES.every((c) => solvedTasks.some((t) => MODULE_BY_ID[t.module].category === c.id))
   return [
     { id: 'first', title: 'Первый шаг', description: 'Решить первую задачу', done: solved.length >= 1 },
     { id: 'ten', title: 'Разогрев', description: 'Решить 10 задач', done: solved.length >= 10 },
-    { id: 'test', title: 'Знаю свой уровень', description: 'Пройти тест уровня', done: !!state.placement },
+    { id: 'test', title: 'Знаю свой уровень', description: 'Пройти тест уровня', done: Object.keys(state.placements).length > 0 },
+    { id: 'four', title: 'Разносторонний ум', description: 'Решить задачу в каждом из четырёх направлений', done: allDirections },
     { id: 'run5', title: 'Без промаха', description: '5 задач подряд с первой попытки', done: state.bestRun >= 5 },
     { id: 'streak3', title: 'Привычка', description: 'Заниматься 3 дня подряд', done: streakBest >= 3 },
     { id: 'hundred', title: 'Сотня', description: 'Решить 100 задач', done: solved.length >= 100 },

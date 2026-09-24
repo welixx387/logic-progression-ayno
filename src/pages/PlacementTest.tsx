@@ -1,26 +1,41 @@
 import { ArrowRight, Clock, Gauge, ListChecks, RotateCcw } from 'lucide-react'
 import { useEffect, useState } from 'react'
+import { CategoryTabs } from '../components/CategoryTabs'
 import { Burst, delay } from '../components/Motion'
 import { TaskCard } from '../components/TaskCard'
-import { LevelBars, Page, ProgressBar } from '../components/ui'
+import { CategoryIcon, LevelBars, Page, ProgressBar } from '../components/ui'
+import { CATEGORY_BY_ID, isCategory } from '../content/categories'
 import { LEVELS, levelInfo } from '../content/levels'
+import { modulesOf } from '../content/modules'
 import { tasksOf } from '../lib/catalog'
-import { Link } from '../lib/router'
+import { Link, navigate } from '../lib/router'
 import { useProgress } from '../store/progress'
-import type { Level, ModuleId, Task } from '../types'
+import type { CategoryId, Level, ModuleId, Task } from '../types'
 
 const PER_LEVEL = 3
-/** Логические таблицы слишком длинные для теста — их не берём. */
-const TEST_MODULES: ModuleId[] = ['sequences', 'letters', 'odd', 'analogies', 'syllogisms', 'order', 'knights', 'symbols', 'matrices', 'time', 'combinatorics', 'classic']
+
+/** Темы направления, из которых собирается тест (слишком длинные задачи не берём). */
+const testModules = (c: CategoryId): ModuleId[] => modulesOf(c).filter((m) => !m.noTest).map((m) => m.id)
+
+/** Что проверяет тест каждого направления. */
+const WHAT: Record<CategoryId, string> = {
+  logic: 'Тест проверит разные виды логики — от числовых рядов до силлогизмов — и откроет подходящие уровни во всех темах логики.',
+  strategy: 'Тест проверит игры на выигрыш, планирование, выгодные решения и умение думать на ход вперёд — и откроет подходящие уровни в темах стратегии.',
+  analytics: 'Тест проверит работу с таблицами, процентами, вероятностями и средними — и откроет подходящие уровни в темах анализа.',
+  emotional: 'Тест проверит словарь эмоций, умение распознавать чувства, справляться с ними и общаться — и откроет подходящие уровни в темах эмоционального мышления.',
+}
 
 function pick<T>(items: T[]): T {
   return items[Math.floor(Math.random() * items.length)]
 }
 
-function buildTest(): Task[] {
+function buildTest(category: CategoryId): Task[] {
   const tasks: Task[] = []
   for (const l of LEVELS) {
-    const modules = [...TEST_MODULES].sort(() => Math.random() - 0.5).slice(0, PER_LEVEL)
+    const modules = testModules(category)
+      .filter((m) => tasksOf(m, l.id).length > 0)
+      .sort(() => Math.random() - 0.5)
+      .slice(0, PER_LEVEL)
     for (const m of modules) tasks.push(pick(tasksOf(m, l.id)))
   }
   return tasks
@@ -36,14 +51,16 @@ function levelFrom(score: number[]): Level {
   return level as Level
 }
 
-export function PlacementTest() {
-  const placement = useProgress((s) => s.placement)
+export function PlacementTest({ categoryParam }: { categoryParam: string | null }) {
+  const category: CategoryId = isCategory(categoryParam) ? categoryParam : 'logic'
+  const cat = CATEGORY_BY_ID[category]
+  const placement = useProgress((s) => s.placements[category])
   const setPlacement = useProgress((s) => s.setPlacement)
   const [test, setTest] = useState<Task[] | null>(null)
   const [answers, setAnswers] = useState<boolean[]>([])
 
   const start = () => {
-    setTest(buildTest())
+    setTest(buildTest(category))
     setAnswers([])
   }
 
@@ -53,9 +70,9 @@ export function PlacementTest() {
   useEffect(() => {
     if (test && answers.length === test.length) {
       const score = scoreOf(answers)
-      setPlacement(levelFrom(score), score)
+      setPlacement(category, levelFrom(score), score)
     }
-  }, [answers, test, setPlacement])
+  }, [answers, test, setPlacement, category])
 
   if (test && answers.length >= test.length) {
     const score = scoreOf(answers)
@@ -68,7 +85,7 @@ export function PlacementTest() {
           {level}
           <Burst count={18} spread={84} />
         </span>
-        <p className="eyebrow mt-5">Результат теста</p>
+        <p className="eyebrow mt-5">Результат теста · {cat.title}</p>
         <h1 className="h-display mt-2 animate-fade-up text-3xl">
           Ваш уровень: <span className={info.text}>{level} · {info.name}</span>
         </h1>
@@ -90,12 +107,12 @@ export function PlacementTest() {
         </div>
         <p className="mt-4 text-sm text-muted">
           {level === 1
-            ? 'Начните с уровня 1 во всех темах — следующие уровни откроются по мере решения задач.'
-            : `Уровни 1–${level} теперь открыты во всех темах. Следующие уровни откроются по мере решения задач.`}
+            ? `Начните с уровня 1 во всех темах направления «${cat.title}» — следующие уровни откроются по мере решения задач.`
+            : `Уровни 1–${level} теперь открыты во всех темах направления «${cat.title}». Следующие уровни откроются по мере решения задач.`}
         </p>
         <div className="mt-6 flex flex-wrap gap-3">
-          <Link to="/course" className="btn-primary px-6 py-3">
-            Перейти к курсу <ArrowRight size={17} />
+          <Link to={`/course?c=${category}`} className="btn-primary px-6 py-3">
+            Перейти к темам <ArrowRight size={17} />
           </Link>
           <button className="btn-ghost px-6 py-3" onClick={start}>
             <RotateCcw size={16} /> Пройти заново
@@ -114,8 +131,8 @@ export function PlacementTest() {
           <button className="text-sm font-semibold text-muted hover:text-ink" onClick={() => setTest(null)}>
             ← Прервать тест
           </button>
-          <span className="text-sm font-bold">
-            Вопрос {i + 1} из {test.length}
+          <span className="flex items-center gap-2 text-sm font-bold">
+            <span className={`hidden sm:inline ${cat.text}`}>{cat.tab} ·</span> Вопрос {i + 1} из {test.length}
           </span>
         </div>
         <ProgressBar value={i} max={test.length} className="mt-3" />
@@ -131,9 +148,17 @@ export function PlacementTest() {
     <Page className="max-w-3xl py-10">
       <p className="eyebrow">Тест уровня</p>
       <h1 className="h-display mt-2 text-3xl">С какого уровня начать?</h1>
-      <p className="mt-3 text-lg leading-relaxed text-muted">
-        Тест проверит разные виды логики — от числовых рядов до силлогизмов — и откроет подходящие уровни во всех темах курса.
-      </p>
+      <p className="mt-3 text-muted">У каждого направления свой тест. Выберите, что хотите проверить:</p>
+      <div className="mt-4">
+        <CategoryTabs value={category} onChange={(c) => navigate(`/test?c=${c}`, true)} />
+      </div>
+      <div key={category} className="mt-5 flex animate-fade-up items-start gap-4">
+        <CategoryIcon id={category} />
+        <div className="min-w-0 flex-1">
+          <h2 className="font-display text-lg font-semibold">{cat.title}</h2>
+          <p className="mt-1 leading-relaxed text-muted">{WHAT[category]}</p>
+        </div>
+      </div>
       <div className="mt-6 grid gap-3 sm:grid-cols-3">
         {[
           { icon: ListChecks, title: '15 задач', text: 'по 3 на каждый уровень' },
@@ -141,7 +166,7 @@ export function PlacementTest() {
           { icon: Gauge, title: 'Одна попытка', text: 'без подсказок и разборов' },
         ].map(({ icon: Icon, title, text }, i) => (
           <div key={title} className="card group animate-fade-up p-4 transition duration-300 hover:-translate-y-0.5 hover:shadow-lift" style={delay(i, 90)}>
-            <Icon size={20} className="text-accent transition duration-300 group-hover:scale-110" />
+            <Icon size={20} className={`transition duration-300 group-hover:scale-110 ${cat.text}`} />
             <div className="mt-2 font-bold">{title}</div>
             <div className="text-sm text-muted">{text}</div>
           </div>

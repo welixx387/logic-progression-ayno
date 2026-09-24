@@ -1,5 +1,8 @@
 export type Level = 1 | 2 | 3 | 4 | 5
 
+/** Направление курса: логика, стратегия, анализ или эмоции. */
+export type CategoryId = 'logic' | 'strategy' | 'analytics' | 'emotional'
+
 export type ModuleId =
   | 'sequences'
   | 'letters'
@@ -14,6 +17,21 @@ export type ModuleId =
   | 'combinatorics'
   | 'zebra'
   | 'classic'
+  // Стратегическое мышление
+  | 'games'
+  | 'planning'
+  | 'decisions'
+  | 'opponent'
+  // Аналитическое мышление
+  | 'tables'
+  | 'percent'
+  | 'probability'
+  | 'stats'
+  // Эмоциональное мышление
+  | 'emotions'
+  | 'recognize'
+  | 'regulation'
+  | 'empathy'
 
 /** Как отвечать: выбрать вариант, ввести число или ввести текст. */
 export type TaskKind = 'choice' | 'number' | 'text'
@@ -23,6 +41,12 @@ export type TaskDisplay =
   | { type: 'sequence'; items: string[] }
   | { type: 'grid'; rows: string[][] }
   | { type: 'lines'; lines: string[] }
+  /** Таблица с заголовками столбцов; первый столбец — подписи строк. */
+  | { type: 'table'; head: string[]; rows: string[][] }
+  /** Горизонтальная столбчатая диаграмма. */
+  | { type: 'bars'; unit?: string; items: { label: string; value: number }[] }
+  /** Реплика или диалог: кто говорит и что. */
+  | { type: 'dialog'; lines: { who: string; text: string }[] }
 
 export interface Task {
   /** Стабильный идентификатор вида `sequences-3-07`. */

@@ -18,9 +18,9 @@ import { dailyTask } from './store/progress'
 
 function Screen({ path, query }: { path: string; query: URLSearchParams }) {
   if (path === '/') return <Landing />
-  if (path === '/course') return <Course />
+  if (path === '/course') return <Course categoryParam={query.get('c')} />
   if (path === '/practice') return <Practice key={query.toString()} query={query} />
-  if (path === '/test') return <PlacementTest />
+  if (path === '/test') return <PlacementTest categoryParam={query.get('c')} />
   if (path === '/progress') return <Progress />
   if (path === '/account') return <Account />
   if (path === '/daily') return <TaskPage id={dailyTask().id} daily />

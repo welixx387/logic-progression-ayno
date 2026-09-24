@@ -107,7 +107,7 @@ export function TaskPage({ id, daily = false }: { id: string; daily?: boolean })
               <Link to={`/module/${task.module}?l=${task.level - 1}`} className="btn-ghost">
                 К уровню {task.level - 1}
               </Link>
-              <Link to="/test" className="btn-primary">
+              <Link to={`/test?c=${m.category}`} className="btn-primary">
                 Тест уровня
               </Link>
             </div>

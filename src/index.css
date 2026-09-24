@@ -24,6 +24,10 @@
   --lvl3: 91 75 255;
   --lvl4: 160 76 240;
   --lvl5: 232 58 94;
+  --cat-logic: 91 75 255;
+  --cat-strategy: 214 110 12;
+  --cat-analytics: 8 140 172;
+  --cat-emotional: 220 55 115;
   --shadow: 40 30 90;
   color-scheme: light;
 }
@@ -50,6 +54,10 @@
   --lvl3: 142 128 255;
   --lvl4: 192 132 252;
   --lvl5: 251 113 133;
+  --cat-logic: 142 128 255;
+  --cat-strategy: 245 165 70;
+  --cat-analytics: 45 200 225;
+  --cat-emotional: 244 114 170;
   --shadow: 0 0 0;
   color-scheme: dark;
 }

@@ -1,4 +1,13 @@
-import type { Level } from '../types'
+import type { CategoryId, Level } from '../types'
+
+/** Результат теста уровня. */
+export interface Placement {
+  level: Level
+  at: number
+  score: number[]
+}
+
+export type Placements = Partial<Record<CategoryId, Placement>>
 
 /** Запись о задаче — та же, что в сторе прогресса. */
 export interface TaskRecord {
@@ -19,7 +28,10 @@ export interface ProgressPayload {
   days: Record<string, number>
   run: number
   bestRun: number
-  placement: { level: Level; at: number; score: number[] } | null
+  /** Тест уровня по логике — поле из первой версии, его понимают старые версии сайта. */
+  placement: Placement | null
+  /** Тест уровня отдельно для каждого направления. */
+  placements?: Placements
   seen: string[]
 }
 
@@ -58,9 +70,20 @@ export function mergeProgress(local: ProgressPayload, remote: Partial<ProgressPa
   const days = { ...local.days }
   for (const [day, n] of Object.entries(remote.days ?? {})) days[day] = Math.max(days[day] ?? 0, n)
 
-  const lp = local.placement
-  const rp = remote.placement ?? null
-  const placement = lp && rp ? (rp.at > lp.at ? rp : lp) : (lp ?? rp)
+  // По каждому направлению берём самый свежий тест; старое поле placement — это логика.
+  const placements: Placements = {}
+  const sources: (Placements | undefined)[] = [
+    local.placements,
+    remote.placements,
+    local.placement ? { logic: local.placement } : undefined,
+    remote.placement ? { logic: remote.placement } : undefined,
+  ]
+  for (const src of sources) {
+    for (const [cat, p] of Object.entries(src ?? {}) as [CategoryId, Placement | undefined][]) {
+      const cur = placements[cat]
+      if (p && (!cur || p.at > cur.at)) placements[cat] = p
+    }
+  }
 
   const seenSet = new Set(local.seen)
   const seen = [...local.seen, ...(remote.seen ?? []).filter((k) => !seenSet.has(k))]
@@ -71,7 +94,8 @@ export function mergeProgress(local: ProgressPayload, remote: Partial<ProgressPa
     days,
     run: local.run,
     bestRun: Math.max(local.bestRun, remote.bestRun ?? 0),
-    placement,
+    placement: placements.logic ?? null,
+    placements,
     seen,
   }
 }
@@ -83,6 +107,7 @@ export function sameProgress(a: ProgressPayload, b: ProgressPayload): boolean {
     a.bestRun === b.bestRun &&
     a.seen.length === b.seen.length &&
     JSON.stringify(a.placement) === JSON.stringify(b.placement) &&
+    JSON.stringify(a.placements ?? {}) === JSON.stringify(b.placements ?? {}) &&
     JSON.stringify(a.days) === JSON.stringify(b.days) &&
     JSON.stringify(a.records) === JSON.stringify(b.records)
   )

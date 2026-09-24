@@ -16,9 +16,14 @@ function read(): Route {
 export function useRoute(): Route {
   const [route, setRoute] = useState(read)
   useEffect(() => {
+    let path = read().path
     const onChange = () => {
-      setRoute(read())
-      window.scrollTo({ top: 0 })
+      const next = read()
+      setRoute(next)
+      // Прокручиваем наверх только при переходе на другую страницу,
+      // а не при смене вкладки или уровня на той же странице.
+      if (next.path !== path) window.scrollTo({ top: 0 })
+      path = next.path
     }
     window.addEventListener('hashchange', onChange)
     return () => window.removeEventListener('hashchange', onChange)

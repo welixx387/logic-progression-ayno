@@ -1,9 +1,10 @@
 import { Award, Download, Flame, Lock, Monitor, Moon, RotateCcw, Sun, Target, Trophy, Upload, Zap } from 'lucide-react'
 import { useRef, useState } from 'react'
 import { Cascade, CountUp, delay, riseOn } from '../components/Motion'
-import { ModuleIcon, Page, ProgressBar, Stat } from '../components/ui'
+import { CategoryIcon, LevelBadge, ModuleIcon, Page, ProgressBar, Stat } from '../components/ui'
+import { CATEGORIES } from '../content/categories'
 import { LEVELS, RANKS, rankFor } from '../content/levels'
-import { MODULES } from '../content/modules'
+import { modulesOf } from '../content/modules'
 import { TASKS, tasksOf, tasksOfLevel } from '../lib/catalog'
 import { addDays, dayKey, streaks } from '../lib/dates'
 import { Link } from '../lib/router'
@@ -68,8 +69,10 @@ export function Progress() {
   const [confirmReset, setConfirmReset] = useState(false)
 
   const exportData = () => {
-    const { records, xp, days, run, bestRun, placement, lastTaskId, seen } = useProgress.getState()
-    const blob = new Blob([JSON.stringify({ app: 'logic-progression-ayno', records, xp, days, run, bestRun, placement, lastTaskId, seen }, null, 2)], { type: 'application/json' })
+    const { records, xp, days, run, bestRun, placements, lastTaskId, seen } = useProgress.getState()
+    const blob = new Blob([JSON.stringify({ app: 'logic-progression-ayno', records, xp, days, run, bestRun, placements, placement: placements.logic ?? null, lastTaskId, seen }, null, 2)], {
+      type: 'application/json',
+    })
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = url
@@ -115,6 +118,34 @@ export function Progress() {
       </div>
 
       <section className="card mt-4 p-5 sm:p-6">
+        <h2 className="font-bold">По направлениям</h2>
+        <Cascade className="mt-4 grid gap-4 sm:grid-cols-2">
+          {(shown) =>
+            CATEGORIES.map((c, i) => {
+              const list = modulesOf(c.id).flatMap((m) => tasksOf(m.id))
+              const done = solvedCount(records, list)
+              const placement = state.placements[c.id]
+              return (
+                <Link key={c.id} to={`/course?c=${c.id}`} className={`group flex items-center gap-3 rounded-xl p-2 transition hover:bg-surface-2 ${riseOn(shown)}`} style={delay(i, 80)}>
+                  <CategoryIcon id={c.id} />
+                  <div className="min-w-0 flex-1">
+                    <div className="flex flex-wrap items-center justify-between gap-x-2 text-sm">
+                      <span className="font-bold">{c.title}</span>
+                      <span className="font-semibold text-muted">
+                        {done} / {list.length}
+                      </span>
+                    </div>
+                    <ProgressBar value={done} max={list.length} className="mt-1.5" color={c.bg} />
+                    <div className="mt-1.5 text-xs text-muted">{placement ? <LevelBadge level={placement.level} /> : 'Тест уровня не пройден'}</div>
+                  </div>
+                </Link>
+              )
+            })
+          }
+        </Cascade>
+      </section>
+
+      <section className="card mt-4 p-5 sm:p-6">
         <h2 className="font-bold">Активность за {WEEKS} недель</h2>
         <div className="mt-4">
           <Heatmap days={days} />
@@ -147,20 +178,25 @@ export function Progress() {
         <section className="card p-5 sm:p-6">
           <h2 className="font-bold">По темам</h2>
           <div className="mt-4 space-y-2.5">
-            {MODULES.map((m) => {
-              const list = tasksOf(m.id)
-              const done = solvedCount(records, list)
-              return (
-                <Link key={m.id} to={`/module/${m.id}`} className="group flex items-center gap-3 rounded-lg transition hover:bg-surface-2">
-                  <ModuleIcon id={m.id} size="sm" />
-                  <span className="w-40 shrink-0 truncate text-sm font-semibold sm:w-48">{m.title}</span>
-                  <ProgressBar value={done} max={list.length} className="flex-1" color="bg-good" />
-                  <span className="w-12 text-right text-xs font-semibold text-muted">
-                    {done}/{list.length}
-                  </span>
-                </Link>
-              )
-            })}
+            {CATEGORIES.map((c) => (
+              <div key={c.id} className="space-y-2.5">
+                <h3 className={`pt-2 text-xs font-bold uppercase tracking-[0.12em] ${c.text}`}>{c.tab}</h3>
+                {modulesOf(c.id).map((m) => {
+                  const list = tasksOf(m.id)
+                  const done = solvedCount(records, list)
+                  return (
+                    <Link key={m.id} to={`/module/${m.id}`} className="group flex items-center gap-3 rounded-lg transition hover:bg-surface-2">
+                      <ModuleIcon id={m.id} size="sm" />
+                      <span className="w-36 shrink-0 truncate text-sm font-semibold sm:w-48">{m.title}</span>
+                      <ProgressBar value={done} max={list.length} className="min-w-0 flex-1" color={c.bg} />
+                      <span className="w-12 text-right text-xs font-semibold text-muted">
+                        {done}/{list.length}
+                      </span>
+                    </Link>
+                  )
+                })}
+              </div>
+            ))}
           </div>
         </section>
       </div>

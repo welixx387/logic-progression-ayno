@@ -2,13 +2,22 @@ import { ArrowRight, BookOpen, ChartColumn, ChevronDown, Gauge, Sparkles, Target
 import { useState, type CSSProperties } from 'react'
 import { Cascade, CountUp, delay, Reveal, riseOn, useReveal } from '../components/Motion'
 import { TaskCard } from '../components/TaskCard'
-import { LevelBars, ModuleIcon, Page, SectionTitle } from '../components/ui'
+import { CategoryIcon, LevelBars, Page, SectionTitle } from '../components/ui'
+import { CATEGORIES } from '../content/categories'
 import { LEVELS } from '../content/levels'
-import { MODULES } from '../content/modules'
+import { MODULES, modulesOf } from '../content/modules'
 import { TASKS, TOTAL_ROUNDED, tasksOf, tasksOfLevel } from '../lib/catalog'
 import { Link } from '../lib/router'
 import { isCloudConfigured } from '../lib/supabase'
 import type { Task } from '../types'
+
+const plural = (n: number, one: string, few: string, many: string) => {
+  const m10 = n % 10
+  const m100 = n % 100
+  if (m10 === 1 && m100 !== 11) return one
+  if (m10 >= 2 && m10 <= 4 && (m100 < 12 || m100 > 14)) return few
+  return many
+}
 
 const DEMO: Task = {
   id: 'demo',
@@ -32,7 +41,7 @@ const GLYPHS = [
 ]
 
 const STEPS = [
-  { icon: Gauge, title: 'Тест уровня', text: '15 задач за 10–15 минут покажут, с какого уровня вам начинать, и сразу откроют подходящие задания.' },
+  { icon: Gauge, title: 'Тест уровня', text: '15 задач за 10–15 минут покажут, с какого уровня начинать. У каждого направления — свой тест.' },
   { icon: BookOpen, title: 'Короткая теория', text: 'В каждой теме — главные приёмы и разобранный пример. Никакой воды: только то, что помогает решать.' },
   { icon: Target, title: 'Практика с разбором', text: 'Подсказка, если застряли, и подробное решение после ответа. Ошибка — тоже часть обучения.' },
   { icon: ChartColumn, title: 'Видимый прогресс', text: 'Опыт, ранги, серия дней и достижения. Следующий уровень открывается, когда вы готовы.' },
@@ -40,8 +49,8 @@ const STEPS = [
 
 const AUDIENCE = [
   { title: 'Школьникам', text: 'Развивают внимание и умение рассуждать — пригодится на олимпиадах и экзаменах. Начинайте с «Разминки».' },
-  { title: 'Студентам и взрослым', text: 'Держат ум в тонусе и учат замечать закономерности. 10–15 минут в день достаточно, чтобы видеть рост.' },
-  { title: 'Перед тестами и собеседованиями', text: 'Числовые ряды, матрицы, силлогизмы и аналогии — типичные задания логических и IQ-тестов.' },
+  { title: 'Студентам и взрослым', text: 'Стратегия и анализ данных пригодятся в учёбе и работе, а эмоциональное мышление — в общении. 10–15 минут в день достаточно, чтобы видеть рост.' },
+  { title: 'Перед тестами и собеседованиями', text: 'Ряды, матрицы, силлогизмы, проценты, таблицы и вероятности — типичные задания логических, аналитических и IQ-тестов.' },
 ]
 
 const FAQ = [
@@ -51,12 +60,16 @@ const FAQ = [
       ? 'Нет — начать можно сразу. Но с аккаунтом прогресс хранится в облаке: войдите с одним email на компьютере и на телефоне, и решённые задачи, опыт и серия дней будут везде одинаковыми. То, что вы решили до входа, добавится в аккаунт.'
       : 'Нет. Прогресс автоматически сохраняется в вашем браузере. В разделе «Прогресс» его можно выгрузить в файл и загрузить на другом устройстве.',
   },
-  { q: 'С какого уровня начинать?', a: 'Пройдите тест уровня — он откроет подходящие уровни во всех темах. Или начните с «Разминки»: следующий уровень темы открывается, когда вы решите половину задач предыдущего.' },
+  {
+    q: 'Какие направления есть в курсе?',
+    a: 'Четыре: логическое мышление (ряды, выводы, головоломки), стратегическое (игры на выигрыш, планирование, выгодные решения, ходы наперёд), аналитическое (таблицы, проценты, вероятность, средние) и эмоциональное (словарь эмоций, распознавание чувств, управление эмоциями, эмпатия). Устроены они одинаково: теория, пять уровней, подсказки и разборы.',
+  },
+  { q: 'С какого уровня начинать?', a: 'Пройдите тест уровня — у каждого направления свой, и он откроет подходящие уровни во всех темах этого направления. Или начните с «Разминки»: следующий уровень темы открывается, когда вы решите половину задач предыдущего.' },
   { q: 'Что делать, если задача не получается?', a: 'Нажмите «Подсказка» — она направит, но не выдаст ответ. Если и это не помогло, откройте разбор: решение объяснено по шагам.' },
   { q: 'Как начисляется опыт?', a: 'За задачу с первой попытки без подсказки — полный опыт уровня (от 10 до 60 XP), иначе — половина. Если открыть решение, опыт не начисляется.' },
   {
     q: 'А если задачи закончатся?',
-    a: 'Не закончатся. Кроме задач курса есть режим «Новые задачи»: сайт сам создаёт задачи по всем темам, кроме «Нестандартных», и проверяет, что каждая новая не повторяет ни уже показанные, ни задачи курса. У каждой новой задачи тоже есть подсказка и разбор.',
+    a: 'Не закончатся. Кроме задач курса есть режим «Новые задачи»: сайт сам создаёт задачи по темам всех направлений (кроме «Нестандартных задач») и проверяет, что каждая новая не повторяет ни уже показанные, ни задачи курса. Уровень вы выбираете сами. У каждой новой задачи тоже есть подсказка и разбор. В эмоциональном направлении ситуации написаны вручную, поэтому новых вариантов там меньше.',
   },
   { q: 'Сколько времени заниматься?', a: 'Лучше понемногу, но каждый день: 5–10 задач в день и «Задача дня» дадут заметный результат уже через пару недель.' },
 ]
@@ -85,17 +98,18 @@ export function Landing() {
         <Page className="grid items-center gap-10 pb-16 pt-10 sm:pt-16 lg:grid-cols-[1.05fr_1fr] lg:gap-14 lg:pb-24">
           <div>
             <span className="chip animate-fade-up">
-              <Sparkles size={13} className="animate-flicker text-accent" /> Онлайн-курс логического мышления
+              <Sparkles size={13} className="animate-flicker text-accent" /> Онлайн-курс развития мышления
             </span>
             <h1 className="h-display mt-5 animate-fade-up text-[34px] leading-[1.1] sm:text-5xl lg:text-[56px]" style={delay(1, 90)}>
-              Прокачайте логику{' '}
+              Прокачайте мышление{' '}
               <span className="bg-gradient-to-r from-[#5B4BFF] via-[#B05CF5] to-[#5B4BFF] bg-[length:200%_auto] bg-clip-text text-transparent animate-shine">
                 шаг за шагом
               </span>
             </h1>
             <p className="mt-5 max-w-xl animate-fade-up text-lg leading-relaxed text-muted" style={delay(2, 90)}>
-              <b className="font-semibold text-ink">Logic progression ayno</b> — {TASKS.length} задач в {MODULES.length} темах и на 5 уровнях сложности: от разминки для школьников до
-              олимпиадных головоломок. А когда задачи курса закончатся, сайт будет создавать новые — без повторов. Теория, подсказки, пошаговые разборы и прогресс, который видно.
+              <b className="font-semibold text-ink">Logic progression ayno</b> — {TASKS.length} задач в четырёх направлениях: логическое, стратегическое, аналитическое и
+              эмоциональное мышление. Пять уровней сложности — от разминки до олимпиадных задач, а когда задачи курса закончатся, сайт будет создавать новые без повторов.
+              Теория, подсказки, пошаговые разборы и прогресс, который видно.
             </p>
             <div className="mt-8 flex animate-fade-up flex-wrap gap-3" style={delay(3, 90)}>
               <Link to="/course" className="btn-primary group px-6 py-3 text-base shadow-lift">
@@ -122,8 +136,8 @@ export function Landing() {
           {(
             [
               [TOTAL_ROUNDED, '+', 'задач с разборами'],
-              [MODULES.length, '', 'тем логики'],
-              [5, '', 'уровней сложности'],
+              [4, '', 'направления мышления'],
+              [MODULES.length, '', 'тем с теорией'],
               [null, '∞', 'новых задач без повторов'],
             ] as const
           ).map(([value, suffix, label]) => (
@@ -162,21 +176,45 @@ export function Landing() {
       <section id="program" className="bg-surface-2/60 py-20">
         <Page>
           <Reveal>
-            <SectionTitle eyebrow="Программа курса" title={`${MODULES.length} тем — от рядов чисел до задач Эйнштейна`} subtitle="В каждой теме задания всех пяти уровней, короткая теория и разобранный пример." />
+            <SectionTitle
+              eyebrow="Программа курса"
+              title="Четыре направления мышления"
+              subtitle={`${MODULES.length} тем и ${TASKS.length} задач. Суть везде одна: короткая теория, задачи пяти уровней с подсказками и разборами, опыт и прогресс. Меняется то, что вы тренируете.`}
+            />
           </Reveal>
-          <Cascade className="mt-10 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            {(shown) => MODULES.map((m, i) => (
-              <Link key={m.id} to={`/module/${m.id}`} className={`card group flex gap-4 p-5 transition duration-300 hover:-translate-y-1 hover:shadow-lift ${riseOn(shown)}`} style={delay(i, 50)}>
-                <ModuleIcon id={m.id} />
-                <div className="min-w-0">
-                  <div className="flex items-baseline justify-between gap-2">
-                    <h3 className="font-bold">{m.title}</h3>
-                    <span className="shrink-0 text-xs font-semibold text-faint">{tasksOf(m.id).length} задач</span>
+          <Cascade className="mt-10 grid gap-4 md:grid-cols-2">
+            {(shown) =>
+              CATEGORIES.map((c, i) => {
+                const mods = modulesOf(c.id)
+                const count = mods.reduce((n, m) => n + tasksOf(m.id).length, 0)
+                return (
+                  <div key={c.id} className={`card flex flex-col p-6 transition duration-300 hover:-translate-y-1 hover:shadow-lift ${riseOn(shown)}`} style={delay(i, 110)}>
+                    <div className="flex items-start gap-4">
+                      <CategoryIcon id={c.id} size="lg" />
+                      <div className="min-w-0 flex-1">
+                        <h3 className="font-display text-lg font-semibold">{c.title}</h3>
+                        <p className="mt-1 text-sm leading-relaxed text-muted">{c.description}</p>
+                      </div>
+                    </div>
+                    <div className="mt-5 flex flex-wrap gap-2">
+                      {mods.map((m) => (
+                        <Link key={m.id} to={`/module/${m.id}`} className="chip transition hover:-translate-y-0.5 hover:text-ink">
+                          {m.title}
+                        </Link>
+                      ))}
+                    </div>
+                    <div className="mt-auto flex items-center justify-between gap-3 pt-5">
+                      <span className="text-xs font-semibold text-faint">
+                        {mods.length} {plural(mods.length, 'тема', 'темы', 'тем')} · {count} задач
+                      </span>
+                      <Link to={`/course?c=${c.id}`} className={`group inline-flex items-center gap-1 text-sm font-bold ${c.text}`}>
+                        Открыть <ArrowRight size={16} className="transition group-hover:translate-x-1" />
+                      </Link>
+                    </div>
                   </div>
-                  <p className="mt-1 text-sm leading-relaxed text-muted">{m.short}</p>
-                </div>
-              </Link>
-            ))}
+                )
+              })
+            }
           </Cascade>
         </Page>
       </section>

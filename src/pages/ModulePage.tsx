@@ -3,6 +3,7 @@ import { useState } from 'react'
 import { delay } from '../components/Motion'
 import { TaskDisplay } from '../components/TaskDisplay'
 import { ModuleIcon, Page, ProgressBar } from '../components/ui'
+import { CATEGORY_BY_ID } from '../content/categories'
 import { LEVELS, levelInfo } from '../content/levels'
 import { MODULE_BY_ID, type ModuleInfo } from '../content/modules'
 import { tasksOf } from '../lib/catalog'
@@ -94,10 +95,11 @@ export function ModulePage({ id, levelParam }: { id: string; levelParam: string 
   const m = MODULE_BY_ID[id as ModuleId]
   if (!m) return <NotFound />
 
+  const cat = CATEGORY_BY_ID[m.category]
   const all = tasksOf(m.id)
   const done = solvedCount(state.records, all)
   const firstOpen = ([...LEVELS].reverse().find((l) => isUnlocked(state, m.id, l.id))?.id ?? 1) as Level
-  const level = (Number(levelParam) >= 1 && Number(levelParam) <= 5 ? Number(levelParam) : Math.min(firstOpen, state.placement?.level ?? firstOpen)) as Level
+  const level = (Number(levelParam) >= 1 && Number(levelParam) <= 5 ? Number(levelParam) : Math.min(firstOpen, state.placements[m.category]?.level ?? firstOpen)) as Level
   const list = tasksOf(m.id, level)
   const unlocked = isUnlocked(state, m.id, level)
   const info = levelInfo(level)
@@ -106,8 +108,8 @@ export function ModulePage({ id, levelParam }: { id: string; levelParam: string 
 
   return (
     <Page className="py-8 sm:py-10">
-      <Link to="/course" className="inline-flex items-center gap-1.5 text-sm font-semibold text-muted hover:text-ink">
-        <ArrowLeft size={16} /> Все темы
+      <Link to={`/course?c=${m.category}`} className="inline-flex items-center gap-1.5 text-sm font-semibold text-muted hover:text-ink">
+        <ArrowLeft size={16} /> {cat.title}: все темы
       </Link>
       <div className="mt-4 flex flex-wrap items-start gap-4">
         <span className="animate-pop-in">
@@ -226,7 +228,7 @@ export function ModulePage({ id, levelParam }: { id: string; levelParam: string 
               <Link to={`/module/${m.id}?l=${level - 1}`} className="btn-ghost">
                 К уровню {level - 1}
               </Link>
-              <Link to="/test" className="btn-primary">
+              <Link to={`/test?c=${m.category}`} className="btn-primary">
                 Тест уровня
               </Link>
             </div>

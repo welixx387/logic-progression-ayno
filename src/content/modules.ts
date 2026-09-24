@@ -1,4 +1,7 @@
-import type { ModuleId, TaskDisplay } from '../types'
+import type { CategoryId, ModuleId, TaskDisplay } from '../types'
+import { ANALYTICS_MODULES } from './modules-analytics'
+import { EMOTIONAL_MODULES } from './modules-emotional'
+import { STRATEGY_MODULES } from './modules-strategy'
 
 export interface TheorySection {
   title: string
@@ -7,6 +10,8 @@ export interface TheorySection {
 
 export interface ModuleInfo {
   id: ModuleId
+  /** Направление: логика, стратегия, анализ, эмоции. */
+  category: CategoryId
   title: string
   /** Короткое описание для карточки. */
   short: string
@@ -16,9 +21,12 @@ export interface ModuleInfo {
   tips: string[]
   /** Показать в теории таблицу алфавита с номерами букв. */
   alphabet?: boolean
+  /** Не брать в тест уровня (слишком длинные задачи). */
+  noTest?: boolean
 }
 
-export const MODULES: ModuleInfo[] = [
+/** Логическое мышление — исходные 13 тем курса. */
+const LOGIC_MODULES: Omit<ModuleInfo, 'category'>[] = [
   {
     id: 'sequences',
     title: 'Числовые ряды',
@@ -380,4 +388,13 @@ export const MODULES: ModuleInfo[] = [
   },
 ]
 
+export const MODULES: ModuleInfo[] = [
+  ...LOGIC_MODULES.map((m) => ({ ...m, category: 'logic' as const, noTest: m.id === 'zebra' })),
+  ...STRATEGY_MODULES,
+  ...ANALYTICS_MODULES,
+  ...EMOTIONAL_MODULES,
+]
+
 export const MODULE_BY_ID = Object.fromEntries(MODULES.map((m) => [m.id, m])) as Record<ModuleId, ModuleInfo>
+
+export const modulesOf = (category: CategoryId) => MODULES.filter((m) => m.category === category)

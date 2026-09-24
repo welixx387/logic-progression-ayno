@@ -1,22 +1,40 @@
 import {
+  Activity,
   ArrowLeftRight,
   ArrowUpDown,
+  BookHeart,
   Calculator,
   CaseSensitive,
+  ChartColumn,
+  ChartGantt,
+  ChessKnight,
   Clock,
+  Coins,
+  Compass,
   Dices,
+  Drama,
   Grid3x3,
+  HandHeart,
+  Heart,
   Lightbulb,
+  Percent,
+  Puzzle,
+  Scale,
   Shapes,
+  Sheet,
   Swords,
   Table2,
+  Target,
   TrendingUp,
+  Wind,
   Workflow,
   type LucideIcon,
 } from 'lucide-react'
 import type { ReactNode } from 'react'
+import { CATEGORY_BY_ID } from '../content/categories'
 import { LEVELS, levelInfo } from '../content/levels'
-import type { Level, ModuleId } from '../types'
+import { MODULE_BY_ID } from '../content/modules'
+import type { CategoryId, Level, ModuleId } from '../types'
 import { useAfterMount } from './Motion'
 
 export const MODULE_ICONS: Record<ModuleId, LucideIcon> = {
@@ -33,14 +51,47 @@ export const MODULE_ICONS: Record<ModuleId, LucideIcon> = {
   combinatorics: Dices,
   zebra: Table2,
   classic: Lightbulb,
+  games: Coins,
+  planning: ChartGantt,
+  decisions: Scale,
+  opponent: ChessKnight,
+  tables: Sheet,
+  percent: Percent,
+  probability: Target,
+  stats: ChartColumn,
+  emotions: BookHeart,
+  recognize: Drama,
+  regulation: Wind,
+  empathy: HandHeart,
+}
+
+export const CATEGORY_ICONS: Record<CategoryId, LucideIcon> = {
+  logic: Puzzle,
+  strategy: Compass,
+  analytics: Activity,
+  emotional: Heart,
+}
+
+/** Значок направления в цветной плашке. */
+export function CategoryIcon({ id, size = 'md' }: { id: CategoryId; size?: 'sm' | 'md' | 'lg' }) {
+  const Icon = CATEGORY_ICONS[id]
+  const c = CATEGORY_BY_ID[id]
+  const box = size === 'lg' ? 'h-14 w-14 rounded-2xl' : size === 'sm' ? 'h-8 w-8 rounded-lg' : 'h-11 w-11 rounded-xl'
+  const icon = size === 'lg' ? 26 : size === 'sm' ? 16 : 21
+  return (
+    <span className={`inline-flex shrink-0 items-center justify-center transition duration-300 group-hover:-rotate-6 group-hover:scale-110 ${c.soft} ${c.text} ${box}`}>
+      <Icon size={icon} strokeWidth={2} />
+    </span>
+  )
 }
 
 export function ModuleIcon({ id, size = 'md' }: { id: ModuleId; size?: 'sm' | 'md' | 'lg' }) {
   const Icon = MODULE_ICONS[id]
+  const c = CATEGORY_BY_ID[MODULE_BY_ID[id].category]
   const box = size === 'lg' ? 'h-14 w-14 rounded-2xl' : size === 'sm' ? 'h-8 w-8 rounded-lg' : 'h-11 w-11 rounded-xl'
   const icon = size === 'lg' ? 26 : size === 'sm' ? 16 : 21
   return (
-    <span className={`inline-flex shrink-0 items-center justify-center bg-accent-soft text-accent transition duration-300 group-hover:-rotate-6 group-hover:scale-110 ${box}`}>
+    <span className={`inline-flex shrink-0 items-center justify-center transition duration-300 group-hover:-rotate-6 group-hover:scale-110 ${c.soft} ${c.text} ${box}`}>
       <Icon size={icon} strokeWidth={2} />
     </span>
   )

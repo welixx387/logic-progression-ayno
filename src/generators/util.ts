@@ -17,6 +17,19 @@ export interface Draft {
 
 export type Maker = (level: Level, rng: Rng, index: number) => Draft | null
 
+/**
+ * Вызывает генератор; если для случайных чисел не нашлось достаточно
+ * вариантов ответа (withOptions бросает ошибку), считаем попытку неудачной.
+ */
+function tryMake(gen: ModuleGenerator, level: Level, rng: Rng, index: number): Draft | null {
+  try {
+    return gen.make(level, rng, index)
+  } catch (e) {
+    if (e instanceof Error && e.message.startsWith('Мало вариантов')) return null
+    throw e
+  }
+}
+
 /** Генератор одной темы: как создать задание и сколько их брать в постоянный банк курса. */
 export interface ModuleGenerator {
   module: ModuleId
@@ -64,7 +77,7 @@ export function collect(gen: ModuleGenerator): Task[] {
         throw new Error(`${gen.module}: не удалось набрать ${gen.targets[level]} заданий уровня ${level} (есть ${made})`)
       }
       // После неудачи сдвигаем индекс, чтобы исчерпанный шаблон не зацикливал генерацию.
-      const draft = gen.make(level, rng, made + Math.floor(misses / 5))
+      const draft = tryMake(gen, level, rng, made + Math.floor(misses / 5))
       if (!draft || keys.has(draft.key)) {
         misses++
         continue
@@ -88,7 +101,7 @@ export function generateFresh(gen: ModuleGenerator, level: Level, seen: Readonly
   for (let attempt = 0; attempt < maxAttempts; attempt++) {
     // Случайный номер шаблона: генераторы выбирают шаблон по остатку от номера,
     // поэтому широкий диапазон задействует все шаблоны уровня.
-    const draft = gen.make(level, rng, rng.int(0, 4 * gen.targets[level] - 1))
+    const draft = tryMake(gen, level, rng, rng.int(0, 4 * gen.targets[level] - 1))
     if (!draft) continue
     const hash = keyHash(gen.module, draft.key)
     if (seen.has(hash)) continue
