@@ -115,8 +115,8 @@ export function Landing() {
               <Link to="/course" className="btn-primary group px-6 py-3 text-base shadow-lift">
                 Начать курс <ArrowRight size={18} className="transition group-hover:translate-x-1" />
               </Link>
-              <Link to="/test" className="btn-ghost px-6 py-3 text-base">
-                Определить свой уровень
+              <Link to="/course" className="btn-ghost px-6 py-3 text-base">
+                Выбрать направление
               </Link>
             </div>
             <p className="mt-4 animate-fade-up text-sm text-faint" style={delay(4, 90)}>
@@ -207,7 +207,7 @@ export function Landing() {
                       <span className="text-xs font-semibold text-faint">
                         {mods.length} {plural(mods.length, 'тема', 'темы', 'тем')} · {count} задач
                       </span>
-                      <Link to={`/course?c=${c.id}`} className={`group inline-flex items-center gap-1 text-sm font-bold ${c.text}`}>
+                      <Link to={`/c/${c.id}`} className={`group inline-flex items-center gap-1 text-sm font-bold ${c.text}`}>
                         Открыть <ArrowRight size={16} className="transition group-hover:translate-x-1" />
                       </Link>
                     </div>
@@ -307,7 +307,7 @@ export function Landing() {
             <Link to="/course" className="btn group bg-white px-6 py-3 text-base text-[#2a1f8f] hover:bg-white/90">
               Начать курс <ArrowRight size={18} className="transition group-hover:translate-x-1" />
             </Link>
-            <Link to="/test" className="btn border border-white/40 px-6 py-3 text-base text-white hover:bg-white/10">
+            <Link to="/c/logic/test" className="btn border border-white/40 px-6 py-3 text-base text-white hover:bg-white/10">
               Пройти тест уровня
             </Link>
           </div>

@@ -108,8 +108,8 @@ export function ModulePage({ id, levelParam }: { id: string; levelParam: string 
 
   return (
     <Page className="py-8 sm:py-10">
-      <Link to={`/course?c=${m.category}`} className="inline-flex items-center gap-1.5 text-sm font-semibold text-muted hover:text-ink">
-        <ArrowLeft size={16} /> {cat.title}: все темы
+      <Link to={`/c/${m.category}`} className="inline-flex items-center gap-1.5 text-sm font-semibold text-muted hover:text-ink">
+        <ArrowLeft size={16} /> {cat.title}
       </Link>
       <div className="mt-4 flex flex-wrap items-start gap-4">
         <span className="animate-pop-in">
@@ -166,7 +166,7 @@ export function ModulePage({ id, levelParam }: { id: string; levelParam: string 
           {(unlocked || !NO_GENERATOR.includes(m.id)) && (
             <div className="flex flex-wrap gap-2">
               {!NO_GENERATOR.includes(m.id) && (
-                <Link to={`/practice?gen=1&m=${m.id}&l=${level}&start=1`} className="btn-ghost" title="Задачи создаются автоматически и не повторяются; доступны на любом уровне">
+                <Link to={`/c/${m.category}/practice?gen=1&m=${m.id}&l=${level}&start=1`} className="btn-ghost" title="Задачи создаются автоматически и не повторяются; доступны на любом уровне">
                   <Sparkles size={16} className="text-accent" /> Новые задачи
                 </Link>
               )}
@@ -228,7 +228,7 @@ export function ModulePage({ id, levelParam }: { id: string; levelParam: string 
               <Link to={`/module/${m.id}?l=${level - 1}`} className="btn-ghost">
                 К уровню {level - 1}
               </Link>
-              <Link to={`/test?c=${m.category}`} className="btn-primary">
+              <Link to={`/c/${m.category}/test`} className="btn-primary">
                 Тест уровня
               </Link>
             </div>

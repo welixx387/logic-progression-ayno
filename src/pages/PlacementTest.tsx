@@ -1,14 +1,13 @@
-import { ArrowRight, Clock, Gauge, ListChecks, RotateCcw } from 'lucide-react'
+import { ArrowLeft, ArrowRight, Clock, Gauge, ListChecks, RotateCcw } from 'lucide-react'
 import { useEffect, useState } from 'react'
-import { CategoryTabs } from '../components/CategoryTabs'
 import { Burst, delay } from '../components/Motion'
 import { TaskCard } from '../components/TaskCard'
 import { CategoryIcon, LevelBars, Page, ProgressBar } from '../components/ui'
-import { CATEGORY_BY_ID, isCategory } from '../content/categories'
+import { CATEGORY_BY_ID } from '../content/categories'
 import { LEVELS, levelInfo } from '../content/levels'
 import { modulesOf } from '../content/modules'
 import { tasksOf } from '../lib/catalog'
-import { Link, navigate } from '../lib/router'
+import { Link } from '../lib/router'
 import { useProgress } from '../store/progress'
 import type { CategoryId, Level, ModuleId, Task } from '../types'
 
@@ -51,8 +50,7 @@ function levelFrom(score: number[]): Level {
   return level as Level
 }
 
-export function PlacementTest({ categoryParam }: { categoryParam: string | null }) {
-  const category: CategoryId = isCategory(categoryParam) ? categoryParam : 'logic'
+export function PlacementTest({ category }: { category: CategoryId }) {
   const cat = CATEGORY_BY_ID[category]
   const placement = useProgress((s) => s.placements[category])
   const setPlacement = useProgress((s) => s.setPlacement)
@@ -111,8 +109,8 @@ export function PlacementTest({ categoryParam }: { categoryParam: string | null 
             : `Уровни 1–${level} теперь открыты во всех темах направления «${cat.title}». Следующие уровни откроются по мере решения задач.`}
         </p>
         <div className="mt-6 flex flex-wrap gap-3">
-          <Link to={`/course?c=${category}`} className="btn-primary px-6 py-3">
-            Перейти к темам <ArrowRight size={17} />
+          <Link to={`/c/${category}`} className="btn-primary px-6 py-3">
+            К направлению <ArrowRight size={17} />
           </Link>
           <button className="btn-ghost px-6 py-3" onClick={start}>
             <RotateCcw size={16} /> Пройти заново
@@ -146,13 +144,12 @@ export function PlacementTest({ categoryParam }: { categoryParam: string | null 
 
   return (
     <Page className="max-w-3xl py-10">
-      <p className="eyebrow">Тест уровня</p>
+      <Link to={`/c/${category}`} className="inline-flex items-center gap-1.5 text-sm font-semibold text-muted hover:text-ink">
+        <ArrowLeft size={16} /> {cat.title}
+      </Link>
+      <p className={`mt-4 text-xs font-bold uppercase tracking-[0.14em] ${cat.text}`}>Тест уровня · {cat.tab}</p>
       <h1 className="h-display mt-2 text-3xl">С какого уровня начать?</h1>
-      <p className="mt-3 text-muted">У каждого направления свой тест. Выберите, что хотите проверить:</p>
-      <div className="mt-4">
-        <CategoryTabs value={category} onChange={(c) => navigate(`/test?c=${c}`, true)} />
-      </div>
-      <div key={category} className="mt-5 flex animate-fade-up items-start gap-4">
+      <div className="mt-5 flex animate-fade-up items-start gap-4">
         <CategoryIcon id={category} />
         <div className="min-w-0 flex-1">
           <h2 className="font-display text-lg font-semibold">{cat.title}</h2>

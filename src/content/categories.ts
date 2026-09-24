@@ -12,6 +12,8 @@ export interface CategoryInfo {
   bg: string
   soft: string
   border: string
+  /** Три оттенка для карты активности — от слабого к сильному. */
+  tones: [string, string, string]
 }
 
 export const CATEGORIES: CategoryInfo[] = [
@@ -25,6 +27,7 @@ export const CATEGORIES: CategoryInfo[] = [
     bg: 'bg-cat-logic',
     soft: 'bg-cat-logic/10',
     border: 'border-cat-logic/40',
+    tones: ['bg-cat-logic/30', 'bg-cat-logic/60', 'bg-cat-logic'],
   },
   {
     id: 'strategy',
@@ -36,6 +39,7 @@ export const CATEGORIES: CategoryInfo[] = [
     bg: 'bg-cat-strategy',
     soft: 'bg-cat-strategy/10',
     border: 'border-cat-strategy/40',
+    tones: ['bg-cat-strategy/30', 'bg-cat-strategy/60', 'bg-cat-strategy'],
   },
   {
     id: 'analytics',
@@ -47,6 +51,7 @@ export const CATEGORIES: CategoryInfo[] = [
     bg: 'bg-cat-analytics',
     soft: 'bg-cat-analytics/10',
     border: 'border-cat-analytics/40',
+    tones: ['bg-cat-analytics/30', 'bg-cat-analytics/60', 'bg-cat-analytics'],
   },
   {
     id: 'emotional',
@@ -58,6 +63,7 @@ export const CATEGORIES: CategoryInfo[] = [
     bg: 'bg-cat-emotional',
     soft: 'bg-cat-emotional/10',
     border: 'border-cat-emotional/40',
+    tones: ['bg-cat-emotional/30', 'bg-cat-emotional/60', 'bg-cat-emotional'],
   },
 ]
 

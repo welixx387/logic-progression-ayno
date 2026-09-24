@@ -2,6 +2,7 @@ import { ArrowLeft, ArrowRight, CalendarDays, ChevronLeft, ChevronRight, Lock } 
 import { useEffect } from 'react'
 import { TaskCard } from '../components/TaskCard'
 import { LevelBadge, Page } from '../components/ui'
+import { CATEGORY_BY_ID } from '../content/categories'
 import { MODULE_BY_ID } from '../content/modules'
 import { siblings, TASK_BY_ID, tasksOf } from '../lib/catalog'
 import { Link } from '../lib/router'
@@ -20,6 +21,7 @@ export function TaskPage({ id, daily = false }: { id: string; daily?: boolean })
 
   if (!task) return <NotFound />
   const m = MODULE_BY_ID[task.module]
+  const cat = CATEGORY_BY_ID[m.category]
   const { list, index, prev, next } = siblings(task)
   const unlocked = daily || isUnlocked(state, task.module, task.level)
   const solved = !!state.records[task.id]?.solved || !!state.records[task.id]?.revealed
@@ -27,8 +29,8 @@ export function TaskPage({ id, daily = false }: { id: string; daily?: boolean })
   // Куда идти после последней задачи уровня.
   const nextLevel = task.level < 5 ? tasksOf(task.module, (task.level + 1) as Level)[0] : null
   const after = daily ? (
-    <Link to="/course" className="btn-primary">
-      К курсу <ArrowRight size={16} />
+    <Link to={`/c/${m.category}`} className="btn-primary">
+      К направлению <ArrowRight size={16} />
     </Link>
   ) : next ? (
     <Link to={`/task/${next.id}`} className="btn-primary">
@@ -47,9 +49,16 @@ export function TaskPage({ id, daily = false }: { id: string; daily?: boolean })
   return (
     <Page className="max-w-3xl py-6 sm:py-10">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <Link to={`/module/${task.module}?l=${task.level}`} className="inline-flex items-center gap-1.5 text-sm font-semibold text-muted hover:text-ink">
-          <ArrowLeft size={16} /> {m.title}
-        </Link>
+        <div className="flex min-w-0 flex-wrap items-center gap-x-1.5 text-sm font-semibold text-muted">
+          <ArrowLeft size={16} className="shrink-0" />
+          <Link to={`/c/${m.category}`} className={`hover:underline ${cat.text}`}>
+            {cat.tab}
+          </Link>
+          <span className="text-faint">/</span>
+          <Link to={`/module/${task.module}?l=${task.level}`} className="hover:text-ink">
+            {m.title}
+          </Link>
+        </div>
         <LevelBadge level={task.level} />
       </div>
 
@@ -107,7 +116,7 @@ export function TaskPage({ id, daily = false }: { id: string; daily?: boolean })
               <Link to={`/module/${task.module}?l=${task.level - 1}`} className="btn-ghost">
                 К уровню {task.level - 1}
               </Link>
-              <Link to={`/test?c=${m.category}`} className="btn-primary">
+              <Link to={`/c/${m.category}/test`} className="btn-primary">
                 Тест уровня
               </Link>
             </div>

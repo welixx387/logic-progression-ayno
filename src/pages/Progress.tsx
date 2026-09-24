@@ -1,55 +1,16 @@
 import { Award, Download, Flame, Lock, Monitor, Moon, RotateCcw, Sun, Target, Trophy, Upload, Zap } from 'lucide-react'
 import { useRef, useState } from 'react'
+import { Heatmap, WEEKS } from '../components/Heatmap'
 import { Cascade, CountUp, delay, riseOn } from '../components/Motion'
 import { CategoryIcon, LevelBadge, ModuleIcon, Page, ProgressBar, Stat } from '../components/ui'
 import { CATEGORIES } from '../content/categories'
 import { LEVELS, RANKS, rankFor } from '../content/levels'
 import { modulesOf } from '../content/modules'
 import { TASKS, tasksOf, tasksOfLevel } from '../lib/catalog'
-import { addDays, dayKey, streaks } from '../lib/dates'
+import { dayKey, streaks } from '../lib/dates'
 import { Link } from '../lib/router'
 import { useAuth } from '../store/auth'
 import { achievements, solvedCount, useProgress, type Theme } from '../store/progress'
-
-const WEEKS = 16
-const WEEKDAYS = ['пн', '', 'ср', '', 'пт', '', '']
-
-function Heatmap({ days }: { days: Record<string, number> }) {
-  const today = new Date()
-  // Начинаем с понедельника недели, которая была WEEKS − 1 недель назад.
-  const shift = (today.getDay() + 6) % 7
-  const start = addDays(today, -shift - (WEEKS - 1) * 7)
-  const cells = Array.from({ length: WEEKS * 7 }, (_, i) => addDays(start, i))
-  const max = Math.max(1, ...Object.values(days))
-  const tone = (n: number) => (n === 0 ? 'bg-surface-2' : n / max < 0.34 ? 'bg-accent/35' : n / max < 0.67 ? 'bg-accent/65' : 'bg-accent')
-  return (
-    <div className="flex gap-2 overflow-x-auto pb-1">
-      <div className="grid grid-rows-7 gap-1 pt-0.5 text-[10px] font-semibold text-faint">
-        {WEEKDAYS.map((d, i) => (
-          <span key={i} className="h-3.5 leading-[14px]">
-            {d}
-          </span>
-        ))}
-      </div>
-      <div className="grid grid-flow-col grid-rows-7 gap-1">
-        {cells.map((d, i) => {
-          const key = dayKey(d)
-          const n = days[key] ?? 0
-          const future = d > today
-          // Клетки проявляются неделя за неделей, слева направо.
-          return (
-            <span
-              key={key}
-              title={`${d.toLocaleDateString('ru-RU')}: ${n} задач`}
-              className={`h-3.5 w-3.5 rounded-[4px] ${future ? 'opacity-0' : `animate-pop-in transition hover:scale-125 ${tone(n)}`}`}
-              style={future ? undefined : delay(Math.floor(i / 7) + (i % 7) / 3, 35)}
-            />
-          )
-        })}
-      </div>
-    </div>
-  )
-}
 
 export function Progress() {
   const state = useProgress()
@@ -126,7 +87,7 @@ export function Progress() {
               const done = solvedCount(records, list)
               const placement = state.placements[c.id]
               return (
-                <Link key={c.id} to={`/course?c=${c.id}`} className={`group flex items-center gap-3 rounded-xl p-2 transition hover:bg-surface-2 ${riseOn(shown)}`} style={delay(i, 80)}>
+                <Link key={c.id} to={`/c/${c.id}`} className={`group flex items-center gap-3 rounded-xl p-2 transition hover:bg-surface-2 ${riseOn(shown)}`} style={delay(i, 80)}>
                   <CategoryIcon id={c.id} />
                   <div className="min-w-0 flex-1">
                     <div className="flex flex-wrap items-center justify-between gap-x-2 text-sm">

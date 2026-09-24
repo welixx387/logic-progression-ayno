@@ -230,12 +230,35 @@ export function nextTaskIn(state: Pick<ProgressState, 'records' | 'placements' |
 }
 
 /** Задача дня — одна и та же для всех в этот день. */
-export function dailyTask(date = new Date()): Task {
-  const key = dayKey(date)
+export function dailyTask(date = new Date(), category?: CategoryId): Task {
+  const key = category ? `${dayKey(date)}:${category}` : dayKey(date)
   let h = 2166136261
   for (let i = 0; i < key.length; i++) h = Math.imul(h ^ key.charCodeAt(i), 16777619)
-  const pool = TASKS.filter((t) => t.level >= 2 && t.level <= 4)
+  const pool = TASKS.filter((t) => t.level >= 2 && t.level <= 4 && (!category || MODULE_BY_ID[t.module].category === category))
   return pool[(h >>> 0) % pool.length]
+}
+
+/** Достижения внутри одного направления. */
+export function categoryAchievements(
+  state: Pick<ProgressState, 'records' | 'placements'>,
+  category: CategoryId,
+  stats: { solved: number; solvedNew: number; expert: number },
+): Achievement[] {
+  const solvedIds = new Set(Object.entries(state.records).filter(([, r]) => r.solved).map(([id]) => id))
+  const mods = MODULES.filter((m) => m.category === category)
+  const touched = mods.filter((m) => tasksOf(m.id).some((t) => solvedIds.has(t.id))).length
+  const full = mods.some((m) => tasksOf(m.id).every((t) => solvedIds.has(t.id)))
+  const all = stats.solved + stats.solvedNew
+  return [
+    { id: 'first', title: 'Первый шаг', description: 'Решить первую задачу направления', done: all >= 1 },
+    { id: 'test', title: 'Знаю свой уровень', description: 'Пройти тест уровня направления', done: !!state.placements[category] },
+    { id: 'ten', title: 'Десятка', description: 'Решить 10 задач', done: all >= 10 },
+    { id: 'topics', title: 'Все темы', description: `Решить задачу в каждой из ${mods.length} тем`, done: touched === mods.length },
+    { id: 'expert', title: 'Эксперт', description: 'Решить задачу 5-го уровня', done: stats.expert > 0 },
+    { id: 'fifty', title: 'Полсотни', description: 'Решить 50 задач', done: all >= 50 },
+    { id: 'new', title: 'Без конца', description: 'Решить 10 новых задач', done: stats.solvedNew >= 10 },
+    { id: 'master', title: 'Мастер темы', description: 'Решить все задачи одной темы', done: full },
+  ]
 }
 
 export interface Achievement {

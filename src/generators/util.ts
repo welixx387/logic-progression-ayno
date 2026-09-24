@@ -105,7 +105,8 @@ export function generateFresh(gen: ModuleGenerator, level: Level, seen: Readonly
     if (!draft) continue
     const hash = keyHash(gen.module, draft.key)
     if (seen.has(hash)) continue
-    return toTask(gen, level, `g-${hash}`, draft)
+    // В id — тема и уровень: так статистика направления учитывает и новые задачи.
+    return toTask(gen, level, `g-${gen.module}-${level}-${hash}`, draft)
   }
   return null
 }

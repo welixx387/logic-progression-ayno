@@ -328,16 +328,47 @@ export function Account() {
 
   if (status === 'off') {
     return (
-      <Page className="max-w-2xl py-12">
-        <p className="eyebrow">Аккаунт</p>
-        <h1 className="h-display mt-2 text-2xl">Вход пока не подключён</h1>
-        <p className="mt-3 leading-relaxed text-muted">
-          Прогресс хранится в этом браузере. Чтобы перенести его на другое устройство, сохраните его в файл в разделе{' '}
-          <Link to="/progress" className="font-semibold text-accent hover:underline">
-            «Прогресс»
-          </Link>{' '}
-          и загрузите там.
-        </p>
+      <Page className="py-8 sm:py-12">
+        <div className="grid gap-8 lg:grid-cols-[1fr_minmax(0,460px)] lg:items-start lg:gap-14">
+          <Benefits />
+          <div className="order-first space-y-4 lg:order-none">
+            <div className="card animate-fade-up p-5 sm:p-6">
+              <span className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-warn-soft text-warn">
+                <CloudOff size={20} />
+              </span>
+              <h2 className="mt-4 font-display text-lg font-semibold">Вход скоро заработает</h2>
+              <p className="mt-2 text-sm leading-relaxed text-muted">
+                Владелец сайта ещё не подключил хранилище аккаунтов. Пока прогресс хранится в этом браузере — ничего не потеряется. Перенести его на другое устройство можно
+                через файл в разделе{' '}
+                <Link to="/progress" className="font-semibold text-accent hover:underline">
+                  «Прогресс»
+                </Link>
+                .
+              </p>
+            </div>
+            <details className="card group animate-fade-up p-5 sm:p-6" style={{ animationDelay: '90ms' }}>
+              <summary className="flex cursor-pointer list-none items-center justify-between gap-3 font-bold">
+                Для владельца сайта: как включить вход
+                <span className="text-muted transition group-open:rotate-180">▾</span>
+              </summary>
+              <ol className="mt-4 list-decimal space-y-2.5 pl-5 text-sm leading-relaxed text-muted">
+                <li>
+                  Откройте проект сайта на <b className="text-ink">vercel.com</b> → вкладка <b className="text-ink">Storage</b> → <b className="text-ink">Create Database</b> →{' '}
+                  <b className="text-ink">Supabase</b>. Выберите бесплатный план и создайте базу.
+                </li>
+                <li>
+                  Подключите её к этому проекту (<b className="text-ink">Connect Project</b>) — Vercel сам добавит все ключи.
+                </li>
+                <li>
+                  Откройте <b className="text-ink">Deployments</b> → последнюю сборку → <b className="text-ink">⋯ → Redeploy</b>.
+                </li>
+              </ol>
+              <p className="mt-4 text-sm leading-relaxed text-muted">
+                Всё остальное сайт сделает сам: при сборке создаст таблицу для прогресса, а регистрация будет работать сразу, без писем с подтверждением.
+              </p>
+            </details>
+          </div>
+        </div>
       </Page>
     )
   }

@@ -21,6 +21,7 @@ const ERRORS: [RegExp, string][] = [
   [/for security purposes/i, 'Повторно отправить письмо можно чуть позже — через минуту.'],
   [/should be different from the old password/i, 'Новый пароль должен отличаться от старого.'],
   [/auth session missing|jwt expired/i, 'Сессия истекла — войдите заново.'],
+  [/email address not authorized|error sending/i, 'Письмо не отправлено: на сайте ещё не настроена почта. Если забыли пароль, напишите владельцу сайта.'],
   [/fetch|network|failed to/i, 'Нет связи с сервером. Проверьте интернет и попробуйте снова.'],
 ]
 
@@ -76,6 +77,25 @@ export const useAuth = create<AuthState>()((set, get) => ({
   },
 
   signUp: async (name, email, password) => {
+    // Сначала — через сервер сайта: аккаунт создаётся сразу подтверждённым, письмо не нужно.
+    try {
+      const res = await fetch('/api/register', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ name, email, password }),
+      })
+      if (res.ok) {
+        const { error } = await get().signIn(email, password)
+        return { error, needsConfirm: false }
+      }
+      // 404/405/501 — функции нет или она не настроена: регистрируемся обычным способом.
+      if (![404, 405, 501].includes(res.status)) {
+        const body = (await res.json().catch(() => ({}))) as { error?: string }
+        if (body.error) return { error: translateError(body.error), needsConfirm: false }
+      }
+    } catch {
+      // Сеть или статический хостинг — пробуем обычную регистрацию.
+    }
     const { data, error } = await supabase!.auth.signUp({
       email: email.trim(),
       password,
