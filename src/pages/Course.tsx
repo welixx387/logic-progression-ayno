@@ -1,14 +1,16 @@
-import { ArrowRight, CalendarDays, Flame, Gauge, Play, Sparkles, Zap } from 'lucide-react'
+import { ArrowRight, CalendarDays, Flame, Gauge, Play, Smartphone, Sparkles, Zap } from 'lucide-react'
 import { LevelBadge, ModuleIcon, Page, ProgressBar } from '../components/ui'
 import { LEVELS, rankFor } from '../content/levels'
 import { MODULE_BY_ID, MODULES } from '../content/modules'
 import { TASK_BY_ID, TASKS, tasksOf } from '../lib/catalog'
 import { streaks } from '../lib/dates'
 import { Link } from '../lib/router'
+import { useAuth } from '../store/auth'
 import { dailyTask, isUnlocked, nextTaskIn, solvedCount, useProgress } from '../store/progress'
 
 export function Course() {
   const state = useProgress()
+  const authStatus = useAuth((s) => s.status)
   const { records, xp, placement, lastTaskId, days } = state
   const rank = rankFor(xp)
   const solved = solvedCount(records, TASKS)
@@ -33,6 +35,17 @@ export function Course() {
         </div>
         {placement ? <LevelBadge level={placement.level} /> : null}
       </div>
+
+      {authStatus === 'signed-out' && solved > 0 && (
+        <Link to="/account" className="mt-5 flex flex-wrap items-center gap-3 rounded-2xl border border-line bg-surface p-4 text-sm transition hover:border-accent/50">
+          <Smartphone size={20} className="shrink-0 text-accent" />
+          <span className="min-w-0 flex-1">
+            <b className="font-bold">Сохраните прогресс в аккаунте</b>
+            <span className="text-muted"> — и продолжайте с телефона или другого компьютера. Уже решённое не потеряется.</span>
+          </span>
+          <span className="font-bold text-accent">Войти →</span>
+        </Link>
+      )}
 
       <div className="mt-6 grid gap-3 sm:grid-cols-3">
         <div className="card p-4">
@@ -60,7 +73,7 @@ export function Course() {
 
       <div className="mt-4 grid gap-3 lg:grid-cols-3">
         {!placement && (
-          <Link to="/test" className="card group flex items-center gap-4 p-5 transition hover:shadow-lift">
+          <Link to="/test" className="card group flex min-w-0 items-center gap-4 p-5 transition hover:shadow-lift">
             <span className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-accent text-accent-ink">
               <Gauge size={21} />
             </span>
@@ -72,7 +85,7 @@ export function Course() {
           </Link>
         )}
         {continueTask && (
-          <Link to={`/task/${continueTask.id}`} className="card group flex items-center gap-4 p-5 transition hover:shadow-lift">
+          <Link to={`/task/${continueTask.id}`} className="card group flex min-w-0 items-center gap-4 p-5 transition hover:shadow-lift">
             <span className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-good-soft text-good">
               <Play size={20} fill="currentColor" />
             </span>
@@ -85,7 +98,7 @@ export function Course() {
             <ArrowRight size={18} className="text-muted transition group-hover:translate-x-0.5" />
           </Link>
         )}
-        <Link to="/daily" className="card group flex items-center gap-4 p-5 transition hover:shadow-lift">
+        <Link to="/daily" className="card group flex min-w-0 items-center gap-4 p-5 transition hover:shadow-lift">
           <span className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-warn-soft text-warn">
             <CalendarDays size={20} />
           </span>

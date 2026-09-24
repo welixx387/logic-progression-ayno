@@ -1,5 +1,7 @@
-import { ChartColumn, Dumbbell, Gauge, GraduationCap, Moon, Sun, Zap } from 'lucide-react'
+import { ChartColumn, CloudOff, Dumbbell, Gauge, GraduationCap, LogIn, Moon, Sun, Zap } from 'lucide-react'
 import { Link } from '../lib/router'
+import { isCloudConfigured } from '../lib/supabase'
+import { displayName, useAuth } from '../store/auth'
 import { useProgress } from '../store/progress'
 import { Logo } from './Logo'
 
@@ -19,7 +21,7 @@ export function Header({ path, theme }: { path: string; theme: 'light' | 'dark' 
   return (
     <header className="sticky top-0 z-30 border-b border-line/70 bg-bg/80 pt-[env(safe-area-inset-top)] backdrop-blur-md">
       <div className="mx-auto flex h-16 max-w-6xl items-center gap-4 px-4 sm:px-6">
-        <Link to="/" className="shrink-0 rounded-lg" aria-label="На главную">
+        <Link to="/" className="min-w-0 rounded-lg" aria-label="На главную">
           <Logo />
         </Link>
         <nav className="ml-6 hidden items-center gap-1 md:flex" aria-label="Основная навигация">
@@ -35,11 +37,12 @@ export function Header({ path, theme }: { path: string; theme: 'light' | 'dark' 
             </Link>
           ))}
         </nav>
-        <div className="ml-auto flex items-center gap-2">
+        <div className="ml-auto flex shrink-0 items-center gap-2">
           <Link to="/progress" className="hidden items-center gap-1.5 rounded-full border border-line bg-surface px-3 py-1.5 text-xs font-bold text-ink sm:inline-flex" title="Опыт">
             <Zap size={14} className="text-warn" fill="currentColor" />
             {xp} XP
           </Link>
+          <AccountButton />
           <button
             type="button"
             onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
@@ -52,6 +55,30 @@ export function Header({ path, theme }: { path: string; theme: 'light' | 'dark' 
         </div>
       </div>
     </header>
+  )
+}
+
+/** Кнопка аккаунта: «Войти» или буква имени; с ошибкой синхронизации — значок. */
+function AccountButton() {
+  const status = useAuth((s) => s.status)
+  const user = useAuth((s) => s.user)
+  const syncStatus = useAuth((s) => s.syncStatus)
+  if (!isCloudConfigured || status === 'off') return null
+  if (status === 'authed') {
+    const name = displayName(user)
+    return (
+      <Link to="/account" className="inline-flex items-center gap-2 rounded-full border border-line bg-surface py-1 pl-1 pr-1 text-xs font-bold sm:pr-3" title="Аккаунт">
+        <span className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-accent text-[13px] text-accent-ink">{name.charAt(0).toUpperCase()}</span>
+        <span className="hidden max-w-[8rem] truncate sm:inline">{name}</span>
+        {syncStatus === 'error' && <CloudOff size={14} className="text-bad" aria-label="Нет связи с сервером" />}
+      </Link>
+    )
+  }
+  return (
+    <Link to="/account" className="btn-primary h-9 w-9 px-0 py-0 sm:w-auto sm:px-3.5 sm:text-sm" aria-label="Войти" title="Войти или зарегистрироваться">
+      <LogIn size={16} />
+      <span className="hidden sm:inline">Войти</span>
+    </Link>
   )
 }
 
@@ -81,7 +108,7 @@ export function Footer() {
     <footer className="mt-20 border-t border-line">
       <div className="mx-auto flex max-w-6xl flex-col gap-4 px-4 py-8 text-sm text-muted sm:flex-row sm:items-center sm:justify-between sm:px-6">
         <Logo compact />
-        <p>Онлайн-курс логического мышления · прогресс хранится в вашем браузере</p>
+        <p>{isCloudConfigured ? 'Онлайн-курс логического мышления · войдите, чтобы прогресс был на всех устройствах' : 'Онлайн-курс логического мышления · прогресс хранится в вашем браузере'}</p>
       </div>
     </footer>
   )

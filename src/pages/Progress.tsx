@@ -6,6 +6,7 @@ import { MODULES } from '../content/modules'
 import { TASKS, tasksOf, tasksOfLevel } from '../lib/catalog'
 import { addDays, dayKey, streaks } from '../lib/dates'
 import { Link } from '../lib/router'
+import { useAuth } from '../store/auth'
 import { achievements, solvedCount, useProgress, type Theme } from '../store/progress'
 
 const WEEKS = 16
@@ -42,6 +43,8 @@ function Heatmap({ days }: { days: Record<string, number> }) {
 
 export function Progress() {
   const state = useProgress()
+  const authStatus = useAuth((s) => s.status)
+  const user = useAuth((s) => s.user)
   const { records, xp, days, bestRun, settings, setTheme, setOpenAll, reset, importState } = state
   const rank = rankFor(xp)
   const solved = solvedCount(records, TASKS)
@@ -167,12 +170,29 @@ export function Progress() {
 
       <section className="card mt-4 p-5 sm:p-6">
         <h2 className="font-bold">Настройки</h2>
+        {authStatus !== 'off' && (
+          <div className="mt-4 flex flex-wrap items-center gap-3">
+            <span className="w-32 text-sm font-semibold text-muted">Аккаунт</span>
+            {authStatus === 'authed' ? (
+              <span className="text-sm">
+                {user?.email} ·{' '}
+                <Link to="/account" className="font-semibold text-accent hover:underline">
+                  управление
+                </Link>
+              </span>
+            ) : (
+              <Link to="/account" className="btn-ghost py-2">
+                Войти, чтобы сохранить прогресс на всех устройствах
+              </Link>
+            )}
+          </div>
+        )}
         <div className="mt-4 flex flex-wrap items-center gap-3">
           <span className="w-32 text-sm font-semibold text-muted">Тема</span>
           <div className="inline-flex rounded-xl border border-line bg-surface-2 p-1">
             {(
               [
-                ['system', 'Как в системе', Monitor],
+                ['system', 'Авто', Monitor],
                 ['light', 'Светлая', Sun],
                 ['dark', 'Тёмная', Moon],
               ] as [Theme, string, typeof Sun][]

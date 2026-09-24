@@ -19,9 +19,9 @@ export function LogoMark({ size = 32, className = '' }: { size?: number; classNa
 
 export function Logo({ compact = false }: { compact?: boolean }) {
   return (
-    <span className="flex items-center gap-2.5">
-      <LogoMark size={compact ? 28 : 32} />
-      <span className="font-display text-[15px] font-semibold leading-none tracking-tight text-ink">
+    <span className="flex min-w-0 items-center gap-2.5">
+      <LogoMark size={compact ? 28 : 32} className="shrink-0" />
+      <span className="truncate font-display text-[13px] font-semibold leading-none tracking-tight text-ink min-[420px]:text-[15px]">
         Logic progression <span className="text-accent">ayno</span>
       </span>
     </span>

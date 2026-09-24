@@ -3,18 +3,10 @@ import { persist } from 'zustand/middleware'
 import { levelInfo } from '../content/levels'
 import { tasksOf, TASKS } from '../lib/catalog'
 import { dayKey } from '../lib/dates'
+import { mergeProgress, sameProgress, type ProgressPayload, type TaskRecord } from '../lib/merge'
 import type { Level, ModuleId, Task } from '../types'
 
-export interface TaskRecord {
-  solved: boolean
-  /** Решена с первой попытки и без подсказки. */
-  firstTry: boolean
-  revealed: boolean
-  hinted: boolean
-  attempts: number
-  xp: number
-  at: number
-}
+export type { TaskRecord } from '../lib/merge'
 
 export type Theme = 'system' | 'light' | 'dark'
 
@@ -48,6 +40,8 @@ interface ProgressState {
   setOpenAll: (open: boolean) => void
   reset: () => void
   importState: (data: unknown) => boolean
+  /** Вливает прогресс с другого устройства; возвращает true, если что-то изменилось. */
+  mergeRemote: (remote: Partial<ProgressPayload>) => boolean
 }
 
 const empty = () => ({
@@ -132,6 +126,14 @@ export const useProgress = create<ProgressState>()(
         })
         return true
       },
+
+      mergeRemote: (remote) => {
+        const local = payloadOf(get())
+        const merged = mergeProgress(local, remote)
+        if (sameProgress(local, merged)) return false
+        set(merged)
+        return true
+      },
     }),
     {
       name: 'logic-progression-ayno',
@@ -152,6 +154,11 @@ export const useProgress = create<ProgressState>()(
 )
 
 // ——— Производные значения ———
+
+/** Часть состояния, которая сохраняется в аккаунте и синхронизируется. */
+export function payloadOf(s: Pick<ProgressState, keyof ProgressPayload>): ProgressPayload {
+  return { records: s.records, xp: s.xp, days: s.days, run: s.run, bestRun: s.bestRun, placement: s.placement, seen: s.seen }
+}
 
 export type TaskStatus = 'new' | 'tried' | 'solved' | 'perfect' | 'revealed'
 
