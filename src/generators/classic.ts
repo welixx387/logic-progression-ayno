@@ -1,5 +1,5 @@
-import type { Level, Task, TaskKind } from '../../src/types.ts'
-import { createRng } from '../lib/rng.ts'
+import type { Level, Task, TaskKind } from '../types.ts'
+import { createRng } from './rng.ts'
 
 /** Классические задачи на смекалку и нестандартное мышление — написаны вручную. */
 

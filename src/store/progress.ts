@@ -34,12 +34,15 @@ interface ProgressState {
   bestRun: number
   placement: { level: Level; at: number; score: number[] } | null
   lastTaskId: string | null
+  /** Отпечатки уже показанных сгенерированных заданий — чтобы они не повторялись. */
+  seen: string[]
   settings: Settings
 
   attempt: (task: Task, correct: boolean) => { xp: number; firstTime: boolean }
   markHint: (task: Task) => void
   reveal: (task: Task) => void
   visit: (task: Task) => void
+  markSeen: (key: string) => void
   setPlacement: (level: Level, score: number[]) => void
   setTheme: (theme: Theme) => void
   setOpenAll: (open: boolean) => void
@@ -55,6 +58,7 @@ const empty = () => ({
   bestRun: 0,
   placement: null,
   lastTaskId: null,
+  seen: [] as string[],
 })
 
 const blank = (): TaskRecord => ({ solved: false, firstTry: false, revealed: false, hinted: false, attempts: 0, xp: 0, at: 0 })
@@ -106,6 +110,7 @@ export const useProgress = create<ProgressState>()(
       },
 
       visit: (task) => set({ lastTaskId: task.id }),
+      markSeen: (key) => set((s) => (s.seen.includes(key) ? s : { seen: [...s.seen, key] })),
 
       setPlacement: (level, score) => set({ placement: { level, score, at: Date.now() } }),
       setTheme: (theme) => set((s) => ({ settings: { ...s.settings, theme } })),
@@ -123,6 +128,7 @@ export const useProgress = create<ProgressState>()(
           bestRun: d.bestRun ?? 0,
           placement: d.placement ?? null,
           lastTaskId: d.lastTaskId ?? null,
+          seen: Array.isArray(d.seen) ? d.seen : [],
         })
         return true
       },
@@ -138,6 +144,7 @@ export const useProgress = create<ProgressState>()(
         bestRun: s.bestRun,
         placement: s.placement,
         lastTaskId: s.lastTaskId,
+        seen: s.seen,
         settings: s.settings,
       }),
     },

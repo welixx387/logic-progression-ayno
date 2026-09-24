@@ -1,6 +1,6 @@
-import type { Level, Task } from '../../src/types.ts'
-import type { Rng } from '../lib/rng.ts'
-import { collect, digitSum, isPrime } from '../lib/util.ts'
+import type { Level, Task } from '../types.ts'
+import type { Rng } from './rng.ts'
+import { collect, digitSum, isPrime, type ModuleGenerator } from './util.ts'
 
 interface Seq {
   full: number[]
@@ -279,8 +279,10 @@ const L5: Rule[] = [
 
 const RULES: Record<Level, Rule[]> = { 1: L1, 2: L2, 3: L3, 4: L4, 5: L5 }
 
-export function sequences(): Task[] {
-  return collect('sequences', { 1: 12, 2: 12, 3: 12, 4: 12, 5: 12 }, (level, rng, index) => {
+export const sequencesGenerator: ModuleGenerator = {
+  module: 'sequences',
+  targets: { 1: 12, 2: 12, 3: 12, 4: 12, 5: 12 },
+  make: (level, rng, index) => {
     const rules = RULES[level]
     const seq = rules[index % rules.length](rng)
     if (!seq) return null
@@ -296,5 +298,9 @@ export function sequences(): Task[] {
       solution: seq.rule,
       key: items.join(','),
     }
-  })
+  },
+}
+
+export function sequences(): Task[] {
+  return collect(sequencesGenerator)
 }

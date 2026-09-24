@@ -1,6 +1,6 @@
-import type { Level, Task } from '../../src/types.ts'
-import type { Rng } from '../lib/rng.ts'
-import { collect, type Draft } from '../lib/util.ts'
+import type { Level, Task } from '../types.ts'
+import type { Rng } from './rng.ts'
+import { collect, type Draft, type ModuleGenerator } from './util.ts'
 
 /** Правило «третье число из первых двух»: c = f(a, b). */
 interface Rule {
@@ -187,6 +187,12 @@ function generate(level: Level, rng: Rng, index: number): Draft | null {
   }
 }
 
+export const matricesGenerator: ModuleGenerator = {
+  module: 'matrices',
+  targets: { 1: 8, 2: 8, 3: 8, 4: 8, 5: 8 },
+  make: generate,
+}
+
 export function matrices(): Task[] {
-  return collect('matrices', { 1: 8, 2: 8, 3: 8, 4: 8, 5: 8 }, generate)
+  return collect(matricesGenerator)
 }

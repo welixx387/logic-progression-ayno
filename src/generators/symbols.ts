@@ -1,6 +1,6 @@
-import type { Level, Task } from '../../src/types.ts'
-import type { Rng } from '../lib/rng.ts'
-import { collect, type Draft } from '../lib/util.ts'
+import type { Level, Task } from '../types.ts'
+import type { Rng } from './rng.ts'
+import { collect, type Draft, type ModuleGenerator } from './util.ts'
 
 const ICONS = ['🍎', '🍌', '🍒', '🍇', '🍋', '🍓', '🍐', '🍑', '🥝', '🍊']
 
@@ -200,8 +200,10 @@ const L5: Template[] = [
 
 const TEMPLATES: Record<Level, Template[]> = { 1: L1, 2: L2, 3: L3, 4: L4, 5: L5 }
 
-export function symbols(): Task[] {
-  return collect('symbols', { 1: 10, 2: 10, 3: 10, 4: 10, 5: 10 }, (level, rng, index): Draft | null => {
+export const symbolsGenerator: ModuleGenerator = {
+  module: 'symbols',
+  targets: { 1: 10, 2: 10, 3: 10, 4: 10, 5: 10 },
+  make: (level, rng, index): Draft | null => {
     const [A, B, C] = rng.sample(ICONS, 3)
     const list = TEMPLATES[level]
     const puzzle = list[index % list.length](rng, A, B, C)
@@ -215,5 +217,9 @@ export function symbols(): Task[] {
       solution: puzzle.steps.join('\n'),
       key: puzzle.lines.join('|').replace(/\p{Extended_Pictographic}/gu, '#'),
     }
-  })
+  },
+}
+
+export function symbols(): Task[] {
+  return collect(symbolsGenerator)
 }

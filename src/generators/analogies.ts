@@ -1,6 +1,6 @@
-import type { Level, Task } from '../../src/types.ts'
-import type { Rng } from '../lib/rng.ts'
-import { collect, digitSum, type Draft } from '../lib/util.ts'
+import type { Level, Task } from '../types.ts'
+import type { Rng } from './rng.ts'
+import { collect, digitSum, type Draft, type ModuleGenerator } from './util.ts'
 
 /** Словесные аналогии: A относится к B так же, как C к ?. */
 const WORDS: { level: Level; a: string; b: string; c: string; answer: string; wrong: string[]; why: string }[] = [
@@ -87,7 +87,7 @@ const BINARY: BinaryRule[] = [
 
 const LEVEL_UNARY: Record<Level, string[]> = {
   1: ['+3', '+5', '+10', '*2', '*3', '-4'],
-  2: [],
+  2: ['+7', '*5', '+12', '-6', '*10', '+15'],
   3: ['sq', '2x+1', '*4', 'rev', 'cube', '3x-2'],
   4: ['sq+1', 'x(x+1)', 'dsum', '(x+1)2', 'dprod', 'sq-1', 'pow2', '3x+1'],
   5: [],
@@ -176,12 +176,18 @@ function wordTask(level: Level, rng: Rng, index: number): Draft {
 
 const capitalizeFirst = (s: string) => `«${s.charAt(0).toUpperCase()}${s.slice(1)}»`
 
-export function analogies(): Task[] {
-  return collect('analogies', { 1: 8, 2: 8, 3: 8, 4: 8, 5: 8 }, (level, rng, index) => {
+export const analogiesGenerator: ModuleGenerator = {
+  module: 'analogies',
+  targets: { 1: 8, 2: 8, 3: 8, 4: 8, 5: 8 },
+  make: (level, rng, index) => {
     if (level === 1) return index < 6 ? wordTask(1, rng, index) : numericUnary(1, rng, index)
-    if (level === 2) return wordTask(2, rng, index)
+    if (level === 2) return index < 8 ? wordTask(2, rng, index) : numericUnary(2, rng, index)
     if (level === 3) return index < 6 ? wordTask(3, rng, index) : numericUnary(3, rng, index)
     if (level === 4) return numericUnary(4, rng, index)
     return numericBinary(rng, index)
-  })
+  },
+}
+
+export function analogies(): Task[] {
+  return collect(analogiesGenerator)
 }

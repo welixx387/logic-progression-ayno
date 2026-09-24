@@ -1,6 +1,6 @@
-import type { Level, Task } from '../../src/types.ts'
-import type { Rng } from '../lib/rng.ts'
-import { collect, isPrime, withOptions } from '../lib/util.ts'
+import type { Level, Task } from '../types.ts'
+import type { Rng } from './rng.ts'
+import { collect, isPrime, withOptions, type ModuleGenerator } from './util.ts'
 
 /** Русский алфавит — 33 буквы, Ё на 7-м месте. */
 export const ALPHABET = 'АБВГДЕЁЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯ'
@@ -39,11 +39,44 @@ const constantStep =
     }
   }
 
-const L1: Rule[] = [constantStep([1]), constantStep([2]), constantStep([-1])]
+/** Каждая буква повторяется дважды, затем шаг по алфавиту. */
+const doubled =
+  (step: number): Rule =>
+  (rng) => {
+    const s = rng.int(1, 33)
+    const ps = [s, s, s + step, s + step, s + 2 * step, s + 2 * step, s + 3 * step]
+    if (!inRange(ps)) return null
+    return {
+      positions: ps,
+      rule: `Каждая буква повторяется дважды, а следующая пара сдвинута на ${fmtStep(step)}: ${describe([s, s + step, s + 2 * step])}. Значит, дальше ${tag(s + 3 * step)}.`,
+      hint: 'Посмотрите на буквы парами.',
+    }
+  }
+
+const L1: Rule[] = [
+  constantStep([1]),
+  constantStep([2]),
+  constantStep([-1]),
+  doubled(1),
+  (rng) => {
+    // Одна буква повторяется через раз, а между ними идёт алфавит.
+    const a = rng.int(1, 33)
+    const b = rng.int(1, 30)
+    if (Math.abs(a - b) <= 3) return null
+    const ps = [a, b, a, b + 1, a, b + 2, a]
+    return {
+      positions: ps,
+      rule: `Через одну повторяется буква ${letter(a)}, а между ними идут буквы подряд: ${describe([b, b + 1, b + 2])}. Сейчас очередь буквы ${letter(a)}.`,
+      hint: 'Посмотрите на буквы через одну.',
+    }
+  },
+]
 
 const L2: Rule[] = [
   constantStep([3]),
   constantStep([-2, -3]),
+  doubled(2),
+  doubled(-1),
   (rng) => {
     const a = rng.int(1, 6)
     const b = rng.int(28, 33)
@@ -86,6 +119,19 @@ const L3: Rule[] = [
 ]
 
 const L4: Rule[] = [
+  (rng) => {
+    const a = rng.int(1, 10)
+    const b = rng.int(5, 16)
+    const s1 = rng.pick([1, 2])
+    const s2 = rng.pick([3, 4])
+    const ps = [a, b, a + s1, b + s2, a + 2 * s1, b + 2 * s2, a + 3 * s1]
+    if (!inRange(ps) || a === b) return null
+    return {
+      positions: ps,
+      rule: `Через одну идут два ряда, оба вперёд, но с разным шагом: ${describe([a, a + s1, a + 2 * s1])} (шаг ${fmtStep(s1)}) и ${describe([b, b + s2, b + 2 * s2])} (шаг ${fmtStep(s2)}). Следующая буква продолжает первый ряд: ${tag(a + 3 * s1)}.`,
+      hint: 'Смотрите на буквы через одну.',
+    }
+  },
   (rng) => {
     const up = rng.pick([2, 3])
     const down = rng.pick([-1, -2].filter((d) => d + up > 0))
@@ -216,8 +262,10 @@ const WORD_ROWS_BY_LEVEL: Record<Level, Record<number, string>> = {
   5: { 3: 'цветов радуги', 7: 'планет Солнечной системы' },
 }
 
-export function letters(): Task[] {
-  return collect('letters', { 1: 8, 2: 8, 3: 8, 4: 8, 5: 8 }, (level, rng, index) => {
+export const lettersGenerator: ModuleGenerator = {
+  module: 'letters',
+  targets: { 1: 8, 2: 8, 3: 8, 4: 8, 5: 8 },
+  make: (level, rng, index) => {
     // Несколько заданий на уровнях 3–5 — ряды первых букв знакомых слов.
     const special = WORD_ROWS_BY_LEVEL[level][index]
     if (special) return wordRow(rng, WORD_ROWS.find((r) => r.name === special)!)
@@ -240,5 +288,9 @@ export function letters(): Task[] {
       solution: pattern.rule,
       key: ps.join(','),
     }
-  })
+  },
+}
+
+export function letters(): Task[] {
+  return collect(lettersGenerator)
 }

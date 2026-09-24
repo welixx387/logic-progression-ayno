@@ -1,6 +1,6 @@
-import type { Level, Task } from '../../src/types.ts'
-import type { Rng } from '../lib/rng.ts'
-import { capitalize, collect, joinAnd, permutations, withOptions, type Draft } from '../lib/util.ts'
+import type { Level, Task } from '../types.ts'
+import type { Rng } from './rng.ts'
+import { capitalize, collect, joinAnd, permutations, withOptions, type Draft, type ModuleGenerator } from './util.ts'
 
 /**
  * Логические таблицы («задачи Эйнштейна»). Подсказки добавляются, пока
@@ -314,6 +314,12 @@ function generate(level: Level, rng: Rng, index: number): Draft | null {
   }
 }
 
+export const zebraGenerator: ModuleGenerator = {
+  module: 'zebra',
+  targets: { 1: 8, 2: 8, 3: 8, 4: 8, 5: 8 },
+  make: generate,
+}
+
 export function zebra(): Task[] {
-  return collect('zebra', { 1: 8, 2: 8, 3: 8, 4: 8, 5: 8 }, generate)
+  return collect(zebraGenerator)
 }

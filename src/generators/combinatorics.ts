@@ -1,6 +1,6 @@
-import type { Level, Task } from '../../src/types.ts'
-import type { Rng } from '../lib/rng.ts'
-import { binom, collect, factorial, permutations, plural, type Draft } from '../lib/util.ts'
+import type { Level, Task } from '../types.ts'
+import type { Rng } from './rng.ts'
+import { binom, collect, factorial, permutations, plural, type Draft, type ModuleGenerator } from './util.ts'
 
 interface Made {
   prompt: string
@@ -131,6 +131,38 @@ const L2: Template[] = [
 ]
 
 const L3: Template[] = [
+  (rng) => {
+    const n = rng.int(4, 15)
+    const pupils = `${n} ${plural(n, 'ученик', 'ученика', 'учеников')}`
+    if (rng.chance(0.5)) {
+      return {
+        prompt: `В классе ${pupils}. Сколькими способами можно выбрать двух дежурных?`,
+        answer: (n * (n - 1)) / 2,
+        hint: 'Порядок не важен: «Аня и Боря» — та же пара, что «Боря и Аня».',
+        solution: `Первого дежурного можно выбрать ${n} способами, второго — ${n - 1}: ${n} × ${n - 1} = ${n * (n - 1)}. Но так каждая пара посчитана дважды, поэтому делим на 2: ${(n * (n - 1)) / 2}.`,
+        key: `duty:${n}`,
+      }
+    }
+    return {
+      prompt: `В классе ${pupils}. Сколькими способами можно выбрать старосту и его заместителя?`,
+      answer: n * (n - 1),
+      hint: 'Здесь порядок важен: староста и заместитель — разные должности.',
+      solution: `Старосту можно выбрать ${n} способами, заместителя — любым из оставшихся ${n - 1}: ${n} × ${n - 1} = ${n * (n - 1)}.`,
+      key: `head:${n}`,
+    }
+  },
+  (rng) => {
+    const k = rng.pick([3, 4, 5, 6, 7, 8, 9, 11, 12, 13, 15, 17, 19, 25])
+    const nums = range(100, 999).filter((x) => x % k === 0)
+    const [first, last] = [nums[0], nums[nums.length - 1]]
+    return {
+      prompt: `Сколько существует трёхзначных чисел, которые делятся на ${k}?`,
+      answer: nums.length,
+      hint: 'Найдите самое маленькое и самое большое такое число, а потом посчитайте шаги между ними.',
+      solution: `Самое маленькое трёхзначное число, кратное ${k}, — ${first}, самое большое — ${last}. Между ними шаги по ${k}: (${last} − ${first}) : ${k} = ${(last - first) / k}. Самих чисел на одно больше: ${nums.length}.`,
+      key: `div3:${k}`,
+    }
+  },
   (rng) => {
     const n = rng.int(3, 6)
     return {
@@ -346,11 +378,17 @@ const L5: Template[] = [
 
 const TEMPLATES: Record<Level, Template[]> = { 1: L1, 2: L2, 3: L3, 4: L4, 5: L5 }
 
-export function combinatorics(): Task[] {
-  return collect('combinatorics', { 1: 8, 2: 8, 3: 8, 4: 8, 5: 8 }, (level, rng, index): Draft | null => {
+export const combinatoricsGenerator: ModuleGenerator = {
+  module: 'combinatorics',
+  targets: { 1: 8, 2: 8, 3: 8, 4: 8, 5: 8 },
+  make: (level, rng, index): Draft | null => {
     const list = TEMPLATES[level]
     const made = list[index % list.length](rng)
     if (!made) return null
     return { kind: 'number', prompt: made.prompt, answer: String(made.answer), hint: made.hint, solution: made.solution, key: made.key }
-  })
+  },
+}
+
+export function combinatorics(): Task[] {
+  return collect(combinatoricsGenerator)
 }

@@ -1,6 +1,6 @@
-import type { Level, Task } from '../../src/types.ts'
-import type { Rng } from '../lib/rng.ts'
-import { clock, collect, plural, withOptions, type Draft } from '../lib/util.ts'
+import type { Level, Task } from '../types.ts'
+import type { Rng } from './rng.ts'
+import { clock, collect, plural, withOptions, type Draft, type ModuleGenerator } from './util.ts'
 
 const DAYS = ['понедельник', 'вторник', 'среда', 'четверг', 'пятница', 'суббота', 'воскресенье']
 /** Род названия дня: для «был / была / было». */
@@ -315,9 +315,15 @@ const L5: Template[] = [
 
 const TEMPLATES: Record<Level, Template[]> = { 1: L1, 2: L2, 3: L3, 4: L4, 5: L5 }
 
-export function time(): Task[] {
-  return collect('time', { 1: 8, 2: 8, 3: 8, 4: 8, 5: 8 }, (level, rng, index) => {
+export const timeGenerator: ModuleGenerator = {
+  module: 'time',
+  targets: { 1: 8, 2: 8, 3: 8, 4: 8, 5: 8 },
+  make: (level, rng, index) => {
     const list = TEMPLATES[level]
     return list[index % list.length](rng)
-  })
+  },
+}
+
+export function time(): Task[] {
+  return collect(timeGenerator)
 }

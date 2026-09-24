@@ -1,4 +1,4 @@
-import type { Level, ModuleId, Task, TaskDisplay, TaskKind } from '../../src/types.ts'
+import type { Level, ModuleId, Task, TaskDisplay, TaskKind } from '../types.ts'
 import { createRng, type Rng } from './rng.ts'
 
 /** Черновик задания, который возвращает генератор; id и уровень добавляет collect(). */
@@ -17,27 +17,54 @@ export interface Draft {
 
 export type Maker = (level: Level, rng: Rng, index: number) => Draft | null
 
+/** Генератор одной темы: как создать задание и сколько их брать в постоянный банк курса. */
+export interface ModuleGenerator {
+  module: ModuleId
+  targets: Record<Level, number>
+  make: Maker
+}
+
 export const LEVELS: Level[] = [1, 2, 3, 4, 5]
 
+/** Короткий отпечаток задания (53-битный хеш cyrb53): по нему узнаём повторы. */
+export function keyHash(module: ModuleId, key: string): string {
+  const text = `${module}:${key}`
+  let h1 = 0xdeadbeef
+  let h2 = 0x41c6ce57
+  for (let i = 0; i < text.length; i++) {
+    const ch = text.charCodeAt(i)
+    h1 = Math.imul(h1 ^ ch, 2654435761)
+    h2 = Math.imul(h2 ^ ch, 1597334677)
+  }
+  h1 = Math.imul(h1 ^ (h1 >>> 16), 2246822507) ^ Math.imul(h2 ^ (h2 >>> 13), 3266489909)
+  h2 = Math.imul(h2 ^ (h2 >>> 16), 2246822507) ^ Math.imul(h1 ^ (h1 >>> 13), 3266489909)
+  return (4294967296 * (2097151 & h2) + (h1 >>> 0)).toString(36)
+}
+
+function toTask(gen: ModuleGenerator, level: Level, id: string, draft: Draft): Task {
+  const { key, ...rest } = draft
+  return { id, module: gen.module, level, ...rest, key: keyHash(gen.module, key) }
+}
+
 /**
- * Собирает задания модуля: для каждого уровня вызывает генератор, пока не
- * наберётся нужное количество уникальных заданий. index — номер следующего
- * задания уровня, по нему генераторы чередуют шаблоны.
+ * Собирает постоянный банк заданий темы: для каждого уровня вызывает генератор,
+ * пока не наберётся нужное количество уникальных заданий. index — номер
+ * следующего задания уровня, по нему генераторы чередуют шаблоны.
  */
-export function collect(module: ModuleId, targets: Record<Level, number>, make: Maker): Task[] {
+export function collect(gen: ModuleGenerator): Task[] {
   const tasks: Task[] = []
   const keys = new Set<string>()
   for (const level of LEVELS) {
-    const rng = createRng(`${module}:${level}`)
+    const rng = createRng(`${gen.module}:${level}`)
     let made = 0
     let attempts = 0
     let misses = 0
-    while (made < targets[level]) {
+    while (made < gen.targets[level]) {
       if (++attempts > 50000) {
-        throw new Error(`${module}: не удалось набрать ${targets[level]} заданий уровня ${level} (есть ${made})`)
+        throw new Error(`${gen.module}: не удалось набрать ${gen.targets[level]} заданий уровня ${level} (есть ${made})`)
       }
       // После неудачи сдвигаем индекс, чтобы исчерпанный шаблон не зацикливал генерацию.
-      const draft = make(level, rng, made + Math.floor(misses / 5))
+      const draft = gen.make(level, rng, made + Math.floor(misses / 5))
       if (!draft || keys.has(draft.key)) {
         misses++
         continue
@@ -45,11 +72,29 @@ export function collect(module: ModuleId, targets: Record<Level, number>, make: 
       misses = 0
       keys.add(draft.key)
       made++
-      const { key, ...rest } = draft
-      tasks.push({ id: `${module}-${level}-${String(made).padStart(2, '0')}`, module, level, ...rest })
+      tasks.push(toTask(gen, level, `${gen.module}-${level}-${String(made).padStart(2, '0')}`, draft))
     }
   }
   return tasks
+}
+
+/**
+ * Создаёт новое задание, которого нет среди seen (отпечатков уже показанных
+ * заданий). Возвращает null, если за maxAttempts попыток ничего нового не нашлось —
+ * значит, варианты этого типа почти исчерпаны.
+ */
+export function generateFresh(gen: ModuleGenerator, level: Level, seen: ReadonlySet<string>, seed: string, maxAttempts = 400): Task | null {
+  const rng = createRng(seed)
+  for (let attempt = 0; attempt < maxAttempts; attempt++) {
+    // Случайный номер шаблона: генераторы выбирают шаблон по остатку от номера,
+    // поэтому широкий диапазон задействует все шаблоны уровня.
+    const draft = gen.make(level, rng, rng.int(0, 4 * gen.targets[level] - 1))
+    if (!draft) continue
+    const hash = keyHash(gen.module, draft.key)
+    if (seen.has(hash)) continue
+    return toTask(gen, level, `g-${hash}`, draft)
+  }
+  return null
 }
 
 /** Собирает варианты ответа: правильный + первые подходящие отвлекающие, перемешанные. */

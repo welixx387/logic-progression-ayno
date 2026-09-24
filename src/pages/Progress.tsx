@@ -45,6 +45,7 @@ export function Progress() {
   const { records, xp, days, bestRun, settings, setTheme, setOpenAll, reset, importState } = state
   const rank = rankFor(xp)
   const solved = solvedCount(records, TASKS)
+  const generatedSolved = Object.entries(records).filter(([id, r]) => id.startsWith('g-') && r.solved).length
   const streak = streaks(days)
   const attempted = Object.values(records).filter((r) => r.solved || r.revealed)
   const clean = attempted.filter((r) => r.firstTry).length
@@ -55,8 +56,8 @@ export function Progress() {
   const [confirmReset, setConfirmReset] = useState(false)
 
   const exportData = () => {
-    const { records, xp, days, run, bestRun, placement, lastTaskId } = useProgress.getState()
-    const blob = new Blob([JSON.stringify({ app: 'logic-progression-ayno', records, xp, days, run, bestRun, placement, lastTaskId }, null, 2)], { type: 'application/json' })
+    const { records, xp, days, run, bestRun, placement, lastTaskId, seen } = useProgress.getState()
+    const blob = new Blob([JSON.stringify({ app: 'logic-progression-ayno', records, xp, days, run, bestRun, placement, lastTaskId, seen }, null, 2)], { type: 'application/json' })
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = url
@@ -86,7 +87,12 @@ export function Progress() {
 
       <div className="mt-6 grid grid-cols-2 gap-3 lg:grid-cols-4">
         <Stat label="Опыт" value={`${xp} XP`} icon={<Zap size={14} className="text-warn" fill="currentColor" />} hint={`Ранг ${rank.index + 1} из ${RANKS.length}`} />
-        <Stat label="Решено задач" value={`${solved}`} icon={<Target size={14} className="text-good" />} hint={`из ${TASKS.length}`} />
+        <Stat
+          label="Решено задач"
+          value={`${solved + generatedSolved}`}
+          icon={<Target size={14} className="text-good" />}
+          hint={generatedSolved ? `${solved} из ${TASKS.length} в курсе + ${generatedSolved} новых` : `из ${TASKS.length} в курсе`}
+        />
         <Stat label="С первой попытки" value={`${accuracy}%`} icon={<Award size={14} className="text-accent" />} hint={`лучшая серия: ${bestRun} подряд`} />
         <Stat label="Серия дней" value={`${streak.current}`} icon={<Flame size={14} className="text-bad" />} hint={`рекорд: ${streak.best}`} />
       </div>

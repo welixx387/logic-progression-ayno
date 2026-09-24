@@ -1,6 +1,6 @@
-import type { Level, Task } from '../../src/types.ts'
-import type { Rng } from '../lib/rng.ts'
-import { capitalize, collect, digitSum, isPrime, joinAnd, type Draft } from '../lib/util.ts'
+import type { Level, Task } from '../types.ts'
+import type { Rng } from './rng.ts'
+import { capitalize, collect, digitSum, isPrime, joinAnd, type Draft, type ModuleGenerator } from './util.ts'
 
 interface Category {
   /** Как назвать группу во множественном числе: «фрукты». */
@@ -323,10 +323,16 @@ function wordTask(level: Level, rng: Rng, index: number): Draft | null {
   }
 }
 
-export function odd(): Task[] {
-  return collect('odd', { 1: 10, 2: 10, 3: 10, 4: 10, 5: 10 }, (level, rng, index) => {
+export const oddGenerator: ModuleGenerator = {
+  module: 'odd',
+  targets: { 1: 10, 2: 10, 3: 10, 4: 10, 5: 10 },
+  make: (level, rng, index) => {
     if (level <= 2) return wordTask(level, rng, index)
     if (level === 3) return index % 2 === 0 ? wordTask(level, rng, index / 2) : numberTask(level, rng, index)
     return numberTask(level, rng, index)
-  })
+  },
+}
+
+export function odd(): Task[] {
+  return collect(oddGenerator)
 }

@@ -1,6 +1,6 @@
-import type { Level, Task } from '../../src/types.ts'
-import type { Rng } from '../lib/rng.ts'
-import { collect, joinAnd, withOptions, type Draft } from '../lib/util.ts'
+import type { Level, Task } from '../types.ts'
+import type { Rng } from './rng.ts'
+import { collect, joinAnd, withOptions, type Draft, type ModuleGenerator } from './util.ts'
 
 /**
  * Логические выводы (силлогизмы). Ответ каждой задачи вычисляется перебором
@@ -69,8 +69,13 @@ class Universe {
     const a = this.area(s)
     return s.form === 'A' || s.form === 'E' ? (m & a) === 0 : (m & a) !== 0
   }
-  /** Все миры, где выполнены посылки; classes — классы, которые не пусты. */
+  /** Уже посчитанные наборы миров — перебор дорогой, а посылки повторяются. */
+  readonly cache = new Map<string, number[]>()
+  /** Все миры, где выполнены посылки; все классы считаются непустыми. */
   models(premises: Stmt[], singleton?: number) {
+    const cacheKey = `${premises.map((p) => `${p.form}${p.x}${p.y}`).join(',')}|${singleton ?? ''}`
+    const hit = this.cache.get(cacheKey)
+    if (hit) return hit
     const out: number[] = []
     const withClass = Array.from({ length: this.n }, (_, c) => this.mask((r) => this.has(r, c)))
     for (let m = 1; m < 1 << this.regions.length; m++) {
@@ -78,6 +83,7 @@ class Universe {
       if (singleton !== undefined && popcount(m & withClass[singleton]) !== 1) continue
       if (premises.every((p) => this.holds(p, m))) out.push(m)
     }
+    this.cache.set(cacheKey, out)
     return out
   }
   verdict(s: Stmt, models: number[]) {
@@ -130,7 +136,8 @@ function inlineWorld(u: Universe, m: number, w: Word[]) {
 
 function minimalModel(u: Universe, premises: Stmt[], extra: Stmt) {
   let best: number | null = null
-  for (const m of u.models([...premises, extra])) {
+  for (const m of u.models(premises)) {
+    if (!u.holds(extra, m)) continue
     if (best === null || popcount(m) < popcount(best)) best = m
   }
   return best
@@ -412,7 +419,8 @@ function choiceTask(rng: Rng, n: number, premises: Stmt[], mode: 'follows' | 'fa
   const all = allStatements(n).filter((s) => !premises.some((p) => same(p, s)))
   const want = mode === 'follows' ? TRUE : FALSE
   // «Тривиальные» выводы следуют из одной посылки — их не берём ни в ответы, ни в ловушки.
-  const trivial = (s: Stmt) => premises.some((p) => u.verdict(s, u.models([p])) === want)
+  const single = premises.map((p) => u.models([p]))
+  const trivial = (s: Stmt) => single.some((m) => u.verdict(s, m) === want)
   const good = rng.shuffle(all.filter((s) => u.verdict(s, models) === want && !trivial(s)))
   if (!good.length) return null
   const answer = good[0]
@@ -455,8 +463,10 @@ function chain(rng: Rng, n: number, forms: Form[], needExistential = false): Stm
   return premises
 }
 
-export function syllogisms(): Task[] {
-  return collect('syllogisms', { 1: 10, 2: 10, 3: 10, 4: 10, 5: 10 }, (level, rng, index) => {
+export const syllogismsGenerator: ModuleGenerator = {
+  module: 'syllogisms',
+  targets: { 1: 10, 2: 10, 3: 10, 4: 10, 5: 10 },
+  make: (level, rng, index) => {
     switch (level) {
       case 1:
         return levelOne(rng, index)
@@ -487,5 +497,9 @@ export function syllogisms(): Task[] {
         return choiceTask(rng, 4, premises, index % 2 === 0 ? 'follows' : 'false')
       }
     }
-  })
+  },
+}
+
+export function syllogisms(): Task[] {
+  return collect(syllogismsGenerator)
 }

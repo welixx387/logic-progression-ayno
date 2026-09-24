@@ -1,10 +1,11 @@
-import { ArrowLeft, BookOpen, Check, ChevronDown, Eye, Lock, Play } from 'lucide-react'
+import { ArrowLeft, BookOpen, Check, ChevronDown, Eye, Lock, Play, Sparkles } from 'lucide-react'
 import { useState } from 'react'
 import { TaskDisplay } from '../components/TaskDisplay'
 import { ModuleIcon, Page, ProgressBar } from '../components/ui'
 import { LEVELS, levelInfo } from '../content/levels'
 import { MODULE_BY_ID, type ModuleInfo } from '../content/modules'
 import { tasksOf } from '../lib/catalog'
+import { NO_GENERATOR } from '../lib/endless'
 import { Link, navigate } from '../lib/router'
 import { isUnlocked, solvedCount, statusOf, unlockNeed, useProgress, type TaskStatus } from '../store/progress'
 import type { Level, ModuleId } from '../types'
@@ -156,10 +157,19 @@ export function ModulePage({ id, levelParam }: { id: string; levelParam: string 
             </h2>
             <p className="mt-1 text-sm text-muted">{info.description}</p>
           </div>
-          {unlocked && next && (
-            <Link to={`/task/${next.id}`} className="btn-primary">
-              <Play size={16} fill="currentColor" /> {solvedHere === 0 ? 'Начать' : solvedHere === list.length ? 'Повторить' : 'Продолжить'}
-            </Link>
+          {unlocked && (
+            <div className="flex flex-wrap gap-2">
+              {!NO_GENERATOR.includes(m.id) && (
+                <Link to={`/practice?gen=1&m=${m.id}&l=${level}&start=1`} className="btn-ghost" title="Задачи создаются автоматически и не повторяются">
+                  <Sparkles size={16} className="text-accent" /> Новые задачи
+                </Link>
+              )}
+              {next && (
+                <Link to={`/task/${next.id}`} className="btn-primary">
+                  <Play size={16} fill="currentColor" /> {solvedHere === 0 ? 'Начать' : solvedHere === list.length ? 'Повторить' : 'Продолжить'}
+                </Link>
+              )}
+            </div>
           )}
         </div>
 

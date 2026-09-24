@@ -1,6 +1,6 @@
-import type { Level, Task } from '../../src/types.ts'
-import type { Rng } from '../lib/rng.ts'
-import { collect, joinAnd, plural, withOptions, type Draft } from '../lib/util.ts'
+import type { Level, Task } from '../types.ts'
+import type { Rng } from './rng.ts'
+import { collect, joinAnd, plural, withOptions, type Draft, type ModuleGenerator } from './util.ts'
 
 /** Рыцари всегда говорят правду, лжецы всегда лгут. Решение — единственная непротиворечивая расстановка. */
 
@@ -84,7 +84,7 @@ interface Config {
 }
 
 const CONFIG: Record<Level, Config> = {
-  1: { n: 2, speakers: [1, 2], kinds: ['knight', 'liar', 'bothLiars', 'same', 'diff'] },
+  1: { n: 2, speakers: [1, 2], kinds: ['knight', 'liar', 'bothLiars', 'bothKnights', 'same', 'diff', 'someLiar', 'countKnights'] },
   2: { n: 2, speakers: [2, 2], kinds: ['knight', 'liar', 'bothLiars', 'bothKnights', 'same', 'diff', 'someLiar', 'countKnights'] },
   3: { n: 3, speakers: [2, 3], kinds: ['knight', 'liar', 'bothLiars', 'same', 'diff', 'countKnights', 'someLiar'] },
   4: { n: 3, speakers: [3, 3], kinds: ['liar', 'same', 'diff', 'countKnights', 'countLiars', 'or', 'ifKnightThenLiar', 'someLiar'] },
@@ -107,7 +107,8 @@ const shortWorld = (w: World) => w.map((k, i) => `${NAMES[i].nom} — ${k ? 'Р'
 
 function generate(level: Level, rng: Rng, index: number): Draft | null {
   const cfg = CONFIG[level]
-  const n = cfg.n
+  // На втором уровне каждая вторая задача — уже про трёх жителей.
+  const n = level === 2 && index % 2 === 1 ? 3 : cfg.n
   const count = rng.int(cfg.speakers[0], cfg.speakers[1])
   const speakers = rng.sample(Array.from({ length: n }, (_, i) => i), count).sort()
   const said: { speaker: number; st: Statement }[] = []
@@ -152,6 +153,12 @@ function generate(level: Level, rng: Rng, index: number): Draft | null {
   return { kind: 'choice', ...withOptions(fmtWorld(solution), others, rng), ...base }
 }
 
+export const knightsGenerator: ModuleGenerator = {
+  module: 'knights',
+  targets: { 1: 10, 2: 10, 3: 10, 4: 10, 5: 10 },
+  make: generate,
+}
+
 export function knights(): Task[] {
-  return collect('knights', { 1: 10, 2: 10, 3: 10, 4: 10, 5: 10 }, generate)
+  return collect(knightsGenerator)
 }

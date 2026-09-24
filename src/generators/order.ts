@@ -1,6 +1,6 @@
-import type { Level, Task } from '../../src/types.ts'
-import type { Rng } from '../lib/rng.ts'
-import { collect, permutations, withOptions, type Draft } from '../lib/util.ts'
+import type { Level, Task } from '../types.ts'
+import type { Rng } from './rng.ts'
+import { collect, permutations, withOptions, type Draft, type ModuleGenerator } from './util.ts'
 
 interface Person {
   nom: string
@@ -225,6 +225,12 @@ function generate(level: Level, rng: Rng, index: number): Draft | null {
   }
 }
 
+export const orderGenerator: ModuleGenerator = {
+  module: 'order',
+  targets: { 1: 10, 2: 10, 3: 10, 4: 10, 5: 10 },
+  make: generate,
+}
+
 export function order(): Task[] {
-  return collect('order', { 1: 10, 2: 10, 3: 10, 4: 10, 5: 10 }, generate)
+  return collect(orderGenerator)
 }

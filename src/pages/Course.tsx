@@ -1,4 +1,4 @@
-import { ArrowRight, CalendarDays, Flame, Gauge, Play, Zap } from 'lucide-react'
+import { ArrowRight, CalendarDays, Flame, Gauge, Play, Sparkles, Zap } from 'lucide-react'
 import { LevelBadge, ModuleIcon, Page, ProgressBar } from '../components/ui'
 import { LEVELS, rankFor } from '../content/levels'
 import { MODULE_BY_ID, MODULES } from '../content/modules'
@@ -98,6 +98,22 @@ export function Course() {
           <ArrowRight size={18} className="text-muted transition group-hover:translate-x-0.5" />
         </Link>
       </div>
+
+      <Link
+        to="/practice?gen=1&start=1"
+        className="mt-3 flex flex-wrap items-center gap-4 rounded-2xl border border-accent/30 bg-accent-soft/60 p-5 transition hover:border-accent/60"
+      >
+        <span className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-accent text-accent-ink">
+          <Sparkles size={20} />
+        </span>
+        <div className="min-w-0 flex-1">
+          <h2 className="font-bold">Новые задачи без конца</h2>
+          <p className="text-sm text-muted">Задачи создаются автоматически на вашем уровне и никогда не повторяются — ни друг друга, ни задачи курса.</p>
+        </div>
+        <span className="btn-primary">
+          Решать <ArrowRight size={16} />
+        </span>
+      </Link>
 
       <h2 className="h-display mt-12 text-xl">Темы курса</h2>
       <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
