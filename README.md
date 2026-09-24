@@ -48,7 +48,6 @@
 ## Запуск
 
 ```bash
-cd logic-progression-ayno
 npm install
 npm run dev        # http://localhost:5173
 npm run build      # сборка в dist/
@@ -58,9 +57,8 @@ npm run preview    # просмотр сборки
 Сайт статический, адреса страниц — через `#` (например, `/#/course`), поэтому
 его можно разместить на любом хостинге без настройки сервера.
 
-**Vercel.** Проект лежит в подпапке репозитория, поэтому при создании проекта
-в Vercel укажите **Root Directory: `logic-progression-ayno`**. Остальное
-Vercel определит сам (Vite, команда `npm run build`, папка `dist`).
+**Vercel.** Импортируйте этот репозиторий в Vercel — настройки менять не нужно:
+Vercel сам определит Vite, команду `npm run build` и папку `dist`.
 
 ## Аккаунты и синхронизация между устройствами
 
