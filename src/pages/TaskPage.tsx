@@ -2,7 +2,8 @@ import { ArrowLeft, ArrowRight, CalendarDays, ChevronLeft, ChevronRight, Lock } 
 import { useEffect } from 'react'
 import { TaskCard } from '../components/TaskCard'
 import { LevelBadge, Page } from '../components/ui'
-import { CATEGORY_BY_ID } from '../content/categories'
+import { CATEGORY_BY_ID, isGradeCategory } from '../content/categories'
+import { levelLabel } from '../content/levels'
 import { MODULE_BY_ID } from '../content/modules'
 import { siblings, TASK_BY_ID, tasksOf } from '../lib/catalog'
 import { Link } from '../lib/router'
@@ -22,6 +23,7 @@ export function TaskPage({ id, daily = false }: { id: string; daily?: boolean })
   if (!task) return <NotFound />
   const m = MODULE_BY_ID[task.module]
   const cat = CATEGORY_BY_ID[m.category]
+  const grades = isGradeCategory(m.category)
   const { list, index, prev, next } = siblings(task)
   const unlocked = daily || isUnlocked(state, task.module, task.level)
   const solved = !!state.records[task.id]?.solved || !!state.records[task.id]?.revealed
@@ -38,7 +40,7 @@ export function TaskPage({ id, daily = false }: { id: string; daily?: boolean })
     </Link>
   ) : nextLevel && isUnlocked(state, task.module, nextLevel.level) ? (
     <Link to={`/task/${nextLevel.id}`} className="btn-primary">
-      Уровень {nextLevel.level} <ArrowRight size={16} />
+      {grades ? levelLabel(nextLevel.level, true) : `Уровень ${nextLevel.level}`} <ArrowRight size={16} />
     </Link>
   ) : (
     <Link to={`/module/${task.module}?l=${task.level}`} className="btn-primary">
@@ -59,7 +61,7 @@ export function TaskPage({ id, daily = false }: { id: string; daily?: boolean })
             {m.title}
           </Link>
         </div>
-        <LevelBadge level={task.level} />
+        <LevelBadge level={task.level} grades={grades} />
       </div>
 
       <div className="mt-5 flex items-center justify-between gap-3">

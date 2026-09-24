@@ -1,7 +1,7 @@
 import { ArrowRight, CalendarDays, Flame, Play, Smartphone, Zap } from 'lucide-react'
 import { Cascade, CountUp, delay, riseOn } from '../components/Motion'
 import { CategoryIcon, LevelBadge, Page, ProgressBar } from '../components/ui'
-import { CATEGORIES } from '../content/categories'
+import { CATEGORIES, isGradeCategory } from '../content/categories'
 import { rankFor } from '../content/levels'
 import { MODULE_BY_ID, modulesOf } from '../content/modules'
 import { TASK_BY_ID, TASKS } from '../lib/catalog'
@@ -33,7 +33,7 @@ export function Course() {
       <h1 className="h-display mt-2 text-2xl sm:text-3xl">{solved === 0 ? 'Добро пожаловать!' : `Ранг: ${rank.current.name}`}</h1>
       <p className="mt-2 text-muted">
         {solved === 0
-          ? 'Выберите направление — у каждого свои темы, тренировка, тест уровня и статистика.'
+          ? 'Выберите направление — у каждого свои темы, тренировка и статистика. В «Школе» — предметы 7–11 классов.'
           : `Решено ${solved} из ${TASKS.length} задач. ${rank.next ? `До ранга «${rank.next.name}» — ${rank.next.xp - xp} XP.` : 'Высший ранг достигнут!'}`}
       </p>
 
@@ -91,9 +91,18 @@ export function Course() {
                   </span>
                 </div>
                 <div className="relative mt-3 flex flex-wrap items-center gap-2 text-xs text-muted">
-                  {placement ? <LevelBadge level={placement.level} /> : <span>Тест уровня не пройден</span>}
+                  {isGradeCategory(c.id) ? (
+                    <span>{state.settings.grade ? `${state.settings.grade} класс` : 'Класс не выбран'}</span>
+                  ) : placement ? (
+                    <LevelBadge level={placement.level} />
+                  ) : (
+                    <span>Тест уровня не пройден</span>
+                  )}
                   <span>
-                    · {modulesOf(c.id).length} {plural(modulesOf(c.id).length, 'тема', 'темы', 'тем')}
+                    · {modulesOf(c.id).length}{' '}
+                    {isGradeCategory(c.id)
+                      ? plural(modulesOf(c.id).length, 'предмет', 'предмета', 'предметов')
+                      : plural(modulesOf(c.id).length, 'тема', 'темы', 'тем')}
                   </span>
                 </div>
               </Link>

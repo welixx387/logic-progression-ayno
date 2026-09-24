@@ -3,8 +3,8 @@ import { useState } from 'react'
 import { delay } from '../components/Motion'
 import { TaskDisplay } from '../components/TaskDisplay'
 import { ModuleIcon, Page, ProgressBar } from '../components/ui'
-import { CATEGORY_BY_ID } from '../content/categories'
-import { LEVELS, levelInfo } from '../content/levels'
+import { CATEGORY_BY_ID, isGradeCategory } from '../content/categories'
+import { LEVELS, levelInfo, levelLabel } from '../content/levels'
 import { MODULE_BY_ID, type ModuleInfo } from '../content/modules'
 import { tasksOf } from '../lib/catalog'
 import { NO_GENERATOR } from '../lib/endless'
@@ -98,8 +98,11 @@ export function ModulePage({ id, levelParam }: { id: string; levelParam: string 
   const cat = CATEGORY_BY_ID[m.category]
   const all = tasksOf(m.id)
   const done = solvedCount(state.records, all)
+  // В школьных предметах уровень — это класс: по умолчанию открываем класс ученика.
+  const grades = isGradeCategory(m.category)
   const firstOpen = ([...LEVELS].reverse().find((l) => isUnlocked(state, m.id, l.id))?.id ?? 1) as Level
-  const level = (Number(levelParam) >= 1 && Number(levelParam) <= 5 ? Number(levelParam) : Math.min(firstOpen, state.placements[m.category]?.level ?? firstOpen)) as Level
+  const fallback = grades ? (state.settings.grade ? state.settings.grade - 6 : 1) : Math.min(firstOpen, state.placements[m.category]?.level ?? firstOpen)
+  const level = (Number(levelParam) >= 1 && Number(levelParam) <= 5 ? Number(levelParam) : fallback) as Level
   const list = tasksOf(m.id, level)
   const unlocked = isUnlocked(state, m.id, level)
   const info = levelInfo(level)
@@ -129,7 +132,7 @@ export function ModulePage({ id, levelParam }: { id: string; levelParam: string 
 
       <Theory m={m} defaultOpen={done === 0} />
 
-      <div className="mt-8 flex gap-2 overflow-x-auto pb-1" role="tablist" aria-label="Уровни">
+      <div className="mt-8 flex gap-2 overflow-x-auto pb-1" role="tablist" aria-label={grades ? 'Классы' : 'Уровни'}>
         {LEVELS.map((l) => {
           const open = isUnlocked(state, m.id, l.id)
           const active = l.id === level
@@ -145,7 +148,7 @@ export function ModulePage({ id, levelParam }: { id: string; levelParam: string 
               }`}
             >
               {open ? <span className={`h-2 w-2 rounded-full transition-transform duration-300 ${active ? 'scale-150' : ''} ${l.bg}`} /> : <Lock size={14} />}
-              Уровень {l.id}
+              {grades ? levelLabel(l.id, true) : `Уровень ${l.id}`}
               <span className="text-xs font-semibold text-faint">
                 {solvedCount(state.records, count)}/{count.length}
               </span>
@@ -158,10 +161,9 @@ export function ModulePage({ id, levelParam }: { id: string; levelParam: string 
       <div key={level} className="card mt-4 animate-fade-up p-5 sm:p-6">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
-            <h2 className={`font-display text-lg font-semibold ${info.text}`}>
-              Уровень {info.id} · {info.name}
-            </h2>
-            <p className="mt-1 text-sm text-muted">{info.description}</p>
+            <h2 className={`font-display text-lg font-semibold ${info.text}`}>{grades ? levelLabel(level, true) : `Уровень ${info.id} · ${info.name}`}</h2>
+            {/* У предметов раздел теории i — это программа (i + 7)-го класса. */}
+            <p className="mt-1 text-sm text-muted">{grades ? (m.sections[level - 1]?.title.split(' · ')[1] ?? '') : info.description}</p>
           </div>
           {(unlocked || !NO_GENERATOR.includes(m.id)) && (
             <div className="flex flex-wrap gap-2">

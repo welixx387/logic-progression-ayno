@@ -3,7 +3,7 @@ import { useState, type CSSProperties } from 'react'
 import { Cascade, CountUp, delay, Reveal, riseOn, useReveal } from '../components/Motion'
 import { TaskCard } from '../components/TaskCard'
 import { CategoryIcon, LevelBars, Page, SectionTitle } from '../components/ui'
-import { CATEGORIES } from '../content/categories'
+import { CATEGORIES, isGradeCategory } from '../content/categories'
 import { LEVELS } from '../content/levels'
 import { MODULES, modulesOf } from '../content/modules'
 import { TASKS, TOTAL_ROUNDED, tasksOf, tasksOfLevel } from '../lib/catalog'
@@ -48,7 +48,7 @@ const STEPS = [
 ]
 
 const AUDIENCE = [
-  { title: 'Школьникам', text: 'Развивают внимание и умение рассуждать — пригодится на олимпиадах и экзаменах. Начинайте с «Разминки».' },
+  { title: 'Школьникам', text: 'В разделе «Школа» — задачи по всем предметам 7–11 классов: выберите свой класс. А логика и анализ развивают умение рассуждать — пригодится на олимпиадах и экзаменах.' },
   { title: 'Студентам и взрослым', text: 'Стратегия и анализ данных пригодятся в учёбе и работе, а эмоциональное мышление — в общении. 10–15 минут в день достаточно, чтобы видеть рост.' },
   { title: 'Перед тестами и собеседованиями', text: 'Ряды, матрицы, силлогизмы, проценты, таблицы и вероятности — типичные задания логических, аналитических и IQ-тестов.' },
 ]
@@ -62,9 +62,9 @@ const FAQ = [
   },
   {
     q: 'Какие направления есть в курсе?',
-    a: 'Четыре: логическое мышление (ряды, выводы, головоломки), стратегическое (игры на выигрыш, планирование, выгодные решения, ходы наперёд), аналитическое (таблицы, проценты, вероятность, средние) и эмоциональное (словарь эмоций, распознавание чувств, управление эмоциями, эмпатия). Устроены они одинаково: теория, пять уровней, подсказки и разборы.',
+    a: 'Пять: логическое мышление (ряды, выводы, головоломки), стратегическое (игры на выигрыш, планирование, выгодные решения, ходы наперёд), аналитическое (таблицы, проценты, вероятность, средние), эмоциональное (словарь эмоций, распознавание чувств, управление эмоциями, эмпатия) и академические способности — 13 школьных предметов 7–11 классов: алгебра, геометрия, физика, химия, биология, информатика, русский язык, литература, английский, история, обществознание, география и основы безопасности. Устроены они одинаково: теория, пять ступеней, подсказки и разборы. В «Школе» ступени — это классы.',
   },
-  { q: 'С какого уровня начинать?', a: 'Пройдите тест уровня — у каждого направления свой, и он откроет подходящие уровни во всех темах этого направления. Или начните с «Разминки»: следующий уровень темы открывается, когда вы решите половину задач предыдущего.' },
+  { q: 'С какого уровня начинать?', a: 'Пройдите тест уровня — у каждого направления свой, и он откроет подходящие уровни во всех темах этого направления. Или начните с «Разминки»: следующий уровень темы открывается, когда вы решите половину задач предыдущего. В «Школе» теста нет: выберите свой класс — открыты сразу все классы, можно повторить прошлые или забежать вперёд.' },
   { q: 'Что делать, если задача не получается?', a: 'Нажмите «Подсказка» — она направит, но не выдаст ответ. Если и это не помогло, откройте разбор: решение объяснено по шагам.' },
   { q: 'Как начисляется опыт?', a: 'За задачу с первой попытки без подсказки — полный опыт уровня (от 10 до 60 XP), иначе — половина. Если открыть решение, опыт не начисляется.' },
   {
@@ -107,8 +107,8 @@ export function Landing() {
               </span>
             </h1>
             <p className="mt-5 max-w-xl animate-fade-up text-lg leading-relaxed text-muted" style={delay(2, 90)}>
-              <b className="font-semibold text-ink">Logic progression ayno</b> — {TASKS.length} задач в четырёх направлениях: логическое, стратегическое, аналитическое и
-              эмоциональное мышление. Пять уровней сложности — от разминки до олимпиадных задач, а когда задачи курса закончатся, сайт будет создавать новые без повторов.
+              <b className="font-semibold text-ink">Logic progression ayno</b> — {TASKS.length} задач в пяти направлениях: логическое, стратегическое, аналитическое и
+              эмоциональное мышление, а ещё все школьные предметы 7–11 классов. Пять уровней сложности — от разминки до олимпиадных задач, а когда задачи курса закончатся, сайт будет создавать новые без повторов.
               Теория, подсказки, пошаговые разборы и прогресс, который видно.
             </p>
             <div className="mt-8 flex animate-fade-up flex-wrap gap-3" style={delay(3, 90)}>
@@ -136,8 +136,8 @@ export function Landing() {
           {(
             [
               [TOTAL_ROUNDED, '+', 'задач с разборами'],
-              [4, '', 'направления мышления'],
-              [MODULES.length, '', 'тем с теорией'],
+              [CATEGORIES.length, '', 'направлений'],
+              [MODULES.length, '', 'тем и предметов с теорией'],
               [null, '∞', 'новых задач без повторов'],
             ] as const
           ).map(([value, suffix, label]) => (
@@ -178,8 +178,8 @@ export function Landing() {
           <Reveal>
             <SectionTitle
               eyebrow="Программа курса"
-              title="Четыре направления мышления"
-              subtitle={`${MODULES.length} тем и ${TASKS.length} задач. Суть везде одна: короткая теория, задачи пяти уровней с подсказками и разборами, опыт и прогресс. Меняется то, что вы тренируете.`}
+              title="Пять направлений"
+              subtitle={`${MODULES.length} тем и предметов, ${TASKS.length} задач. Суть везде одна: короткая теория, задачи пяти уровней с подсказками и разборами, опыт и прогресс. Меняется то, что вы тренируете.`}
             />
           </Reveal>
           <Cascade className="mt-10 grid gap-4 md:grid-cols-2">
@@ -188,7 +188,11 @@ export function Landing() {
                 const mods = modulesOf(c.id)
                 const count = mods.reduce((n, m) => n + tasksOf(m.id).length, 0)
                 return (
-                  <div key={c.id} className={`card flex flex-col p-6 transition duration-300 hover:-translate-y-1 hover:shadow-lift ${riseOn(shown)}`} style={delay(i, 110)}>
+                  <div
+                    key={c.id}
+                    className={`card flex flex-col p-6 transition duration-300 hover:-translate-y-1 hover:shadow-lift ${isGradeCategory(c.id) ? 'md:col-span-2' : ''} ${riseOn(shown)}`}
+                    style={delay(i, 110)}
+                  >
                     <div className="flex items-start gap-4">
                       <CategoryIcon id={c.id} size="lg" />
                       <div className="min-w-0 flex-1">
@@ -205,7 +209,7 @@ export function Landing() {
                     </div>
                     <div className="mt-auto flex items-center justify-between gap-3 pt-5">
                       <span className="text-xs font-semibold text-faint">
-                        {mods.length} {plural(mods.length, 'тема', 'темы', 'тем')} · {count} задач
+                        {mods.length} {isGradeCategory(c.id) ? `${plural(mods.length, 'предмет', 'предмета', 'предметов')} · 7–11 классы` : plural(mods.length, 'тема', 'темы', 'тем')} · {count} задач
                       </span>
                       <Link to={`/c/${c.id}`} className={`group inline-flex items-center gap-1 text-sm font-bold ${c.text}`}>
                         Открыть <ArrowRight size={16} className="transition group-hover:translate-x-1" />

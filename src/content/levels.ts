@@ -62,6 +62,19 @@ export const LEVELS: LevelInfo[] = [
 
 export const levelInfo = (level: number) => LEVELS[Math.min(Math.max(level, 1), 5) - 1]
 
+/** Класс для уровня в школьном направлении: 1 → 7 … 5 → 11. */
+export const gradeOf = (level: number) => level + 6
+
+/** Подпись уровня: «Уровень 2 · Базовый» или «8 класс». */
+export function levelLabel(level: number, grades = false): string {
+  return grades ? `${gradeOf(level)} класс` : `Уровень ${levelInfo(level).id} · ${levelInfo(level).name}`
+}
+
+/** Короткая подпись: «2» или «8 кл.». */
+export function levelShort(level: number, grades = false): string {
+  return grades ? `${gradeOf(level)} кл.` : String(level)
+}
+
 export interface Rank {
   xp: number
   name: string

@@ -1,5 +1,19 @@
 import {
   Activity,
+  Atom,
+  Binary,
+  BookOpenText,
+  Dna,
+  FlaskConical,
+  Globe,
+  GraduationCap,
+  Landmark,
+  Languages,
+  PenLine,
+  Pi,
+  ShieldPlus,
+  Triangle,
+  Users,
   ArrowLeftRight,
   ArrowUpDown,
   BookHeart,
@@ -32,7 +46,7 @@ import {
 } from 'lucide-react'
 import type { ReactNode } from 'react'
 import { CATEGORY_BY_ID } from '../content/categories'
-import { LEVELS, levelInfo } from '../content/levels'
+import { LEVELS, levelInfo, levelLabel } from '../content/levels'
 import { MODULE_BY_ID } from '../content/modules'
 import type { CategoryId, Level, ModuleId } from '../types'
 import { useAfterMount } from './Motion'
@@ -63,6 +77,19 @@ export const MODULE_ICONS: Record<ModuleId, LucideIcon> = {
   recognize: Drama,
   regulation: Wind,
   empathy: HandHeart,
+  algebra: Pi,
+  geometry: Triangle,
+  physics: Atom,
+  chemistry: FlaskConical,
+  biology: Dna,
+  informatics: Binary,
+  russian: PenLine,
+  literature: BookOpenText,
+  english: Languages,
+  history: Landmark,
+  social: Users,
+  geography: Globe,
+  safety: ShieldPlus,
 }
 
 export const CATEGORY_ICONS: Record<CategoryId, LucideIcon> = {
@@ -70,6 +97,7 @@ export const CATEGORY_ICONS: Record<CategoryId, LucideIcon> = {
   strategy: Compass,
   analytics: Activity,
   emotional: Heart,
+  academic: GraduationCap,
 }
 
 /** Значок направления в цветной плашке. */
@@ -108,12 +136,13 @@ export function ProgressBar({ value, max, className = '', color = 'bg-accent' }:
   )
 }
 
-export function LevelBadge({ level, withName = true }: { level: Level | number; withName?: boolean }) {
+/** Уровень задачи; в школьном направлении — класс («9 класс»). */
+export function LevelBadge({ level, withName = true, grades = false }: { level: Level | number; withName?: boolean; grades?: boolean }) {
   const info = levelInfo(level)
   return (
     <span className={`inline-flex items-center gap-1.5 rounded-full bg-surface-2 px-2.5 py-1 text-xs font-bold ${info.text}`}>
       <LevelBars level={info.id} />
-      {withName ? `Уровень ${info.id} · ${info.name}` : `Уровень ${info.id}`}
+      {grades ? levelLabel(info.id, true) : withName ? `Уровень ${info.id} · ${info.name}` : `Уровень ${info.id}`}
     </span>
   )
 }

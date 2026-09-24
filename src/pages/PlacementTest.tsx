@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react'
 import { Burst, delay } from '../components/Motion'
 import { TaskCard } from '../components/TaskCard'
 import { CategoryIcon, LevelBars, Page, ProgressBar } from '../components/ui'
-import { CATEGORY_BY_ID } from '../content/categories'
+import { CATEGORY_BY_ID, isGradeCategory } from '../content/categories'
 import { LEVELS, levelInfo } from '../content/levels'
 import { modulesOf } from '../content/modules'
 import { tasksOf } from '../lib/catalog'
@@ -22,6 +22,7 @@ const WHAT: Record<CategoryId, string> = {
   strategy: 'Тест проверит игры на выигрыш, планирование, выгодные решения и умение думать на ход вперёд — и откроет подходящие уровни в темах стратегии.',
   analytics: 'Тест проверит работу с таблицами, процентами, вероятностями и средними — и откроет подходящие уровни в темах анализа.',
   emotional: 'Тест проверит словарь эмоций, умение распознавать чувства, справляться с ними и общаться — и откроет подходящие уровни в темах эмоционального мышления.',
+  academic: '',
 }
 
 function pick<T>(items: T[]): T {
@@ -71,6 +72,20 @@ export function PlacementTest({ category }: { category: CategoryId }) {
       setPlacement(category, levelFrom(score), score)
     }
   }, [answers, test, setPlacement, category])
+
+  // Для школьных предметов тест не нужен: класс ученик выбирает сам.
+  if (isGradeCategory(category)) {
+    return (
+      <Page className="max-w-2xl py-12">
+        <p className={`text-xs font-bold uppercase tracking-[0.14em] ${cat.text}`}>{cat.title}</p>
+        <h1 className="h-display mt-2 text-2xl">Тест не нужен — выберите свой класс</h1>
+        <p className="mt-3 leading-relaxed text-muted">Задачи по школьным предметам разделены по классам с 7 по 11. Все классы открыты сразу: выберите свой на странице направления.</p>
+        <Link to={`/c/${category}`} className="btn-primary mt-6">
+          К школьным предметам <ArrowRight size={16} />
+        </Link>
+      </Page>
+    )
+  }
 
   if (test && answers.length >= test.length) {
     const score = scoreOf(answers)

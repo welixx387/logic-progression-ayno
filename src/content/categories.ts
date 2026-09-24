@@ -65,7 +65,22 @@ export const CATEGORIES: CategoryInfo[] = [
     border: 'border-cat-emotional/40',
     tones: ['bg-cat-emotional/30', 'bg-cat-emotional/60', 'bg-cat-emotional'],
   },
+  {
+    id: 'academic',
+    title: 'Академические способности',
+    tab: 'Школа',
+    short: 'Школьные предметы с 7 по 11 класс.',
+    description: 'Алгебра, геометрия, физика, химия, биология, информатика, русский язык, литература, английский, история, обществознание, география и основы безопасности — задачи по программе 7–11 классов.',
+    text: 'text-cat-academic',
+    bg: 'bg-cat-academic',
+    soft: 'bg-cat-academic/10',
+    border: 'border-cat-academic/40',
+    tones: ['bg-cat-academic/30', 'bg-cat-academic/60', 'bg-cat-academic'],
+  },
 ]
+
+/** В этом направлении уровни — это классы: 1 → 7 класс … 5 → 11 класс. Классы не закрываются. */
+export const isGradeCategory = (c: CategoryId) => c === 'academic'
 
 export const CATEGORY_BY_ID = Object.fromEntries(CATEGORIES.map((c) => [c.id, c])) as Record<CategoryId, CategoryInfo>
 

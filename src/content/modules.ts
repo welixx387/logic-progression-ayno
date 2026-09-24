@@ -1,4 +1,5 @@
 import type { CategoryId, ModuleId, TaskDisplay } from '../types'
+import { ACADEMIC_MODULES } from './modules-academic'
 import { ANALYTICS_MODULES } from './modules-analytics'
 import { EMOTIONAL_MODULES } from './modules-emotional'
 import { STRATEGY_MODULES } from './modules-strategy'
@@ -10,7 +11,7 @@ export interface TheorySection {
 
 export interface ModuleInfo {
   id: ModuleId
-  /** Направление: логика, стратегия, анализ, эмоции. */
+  /** Направление: логика, стратегия, анализ, эмоции, школьные предметы. */
   category: CategoryId
   title: string
   /** Короткое описание для карточки. */
@@ -393,6 +394,7 @@ export const MODULES: ModuleInfo[] = [
   ...STRATEGY_MODULES,
   ...ANALYTICS_MODULES,
   ...EMOTIONAL_MODULES,
+  ...ACADEMIC_MODULES,
 ]
 
 export const MODULE_BY_ID = Object.fromEntries(MODULES.map((m) => [m.id, m])) as Record<ModuleId, ModuleInfo>

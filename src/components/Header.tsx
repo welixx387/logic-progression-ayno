@@ -50,25 +50,22 @@ export function Header({ path, theme }: { path: string; theme: 'light' | 'dark' 
         <Link to="/" className="min-w-0 rounded-lg" aria-label="На главную">
           <Logo />
         </Link>
-        <nav className="ml-4 hidden items-center gap-1 lg:flex" aria-label="Основная навигация">
-          {NAV.map((item) => {
-            const Icon = item.icon
-            return (
-              <Link
-                key={item.to}
-                to={item.to}
-                className={`inline-flex items-center gap-1.5 rounded-lg px-2.5 py-2 text-sm font-semibold transition duration-200 ${
-                  isActive(path, item) ? activeClass(item) : 'text-muted hover:bg-surface-2 hover:text-ink'
-                }`}
-              >
-                <Icon size={16} className="hidden xl:block" />
-                {item.label}
-              </Link>
-            )
-          })}
+        {/* Шесть пунктов: без иконок, чтобы логотип помещался целиком (иконки — в нижнем меню на телефоне). */}
+        <nav className="ml-2 hidden items-center gap-0.5 lg:flex xl:ml-4 xl:gap-1" aria-label="Основная навигация">
+          {NAV.map((item) => (
+            <Link
+              key={item.to}
+              to={item.to}
+              className={`inline-flex items-center rounded-lg px-2 py-2 text-sm font-semibold transition duration-200 xl:px-2.5 ${
+                isActive(path, item) ? activeClass(item) : 'text-muted hover:bg-surface-2 hover:text-ink'
+              }`}
+            >
+              {item.label}
+            </Link>
+          ))}
         </nav>
         <div className="ml-auto flex shrink-0 items-center gap-2">
-          <Link to="/progress" className="hidden items-center gap-1.5 rounded-full border border-line bg-surface px-3 py-1.5 text-xs font-bold text-ink sm:inline-flex" title="Опыт">
+          <Link to="/progress" className="hidden items-center gap-1.5 rounded-full border border-line bg-surface px-3 py-1.5 text-xs font-bold text-ink sm:inline-flex lg:hidden xl:inline-flex" title="Опыт">
             <Zap key={xp} size={14} className="animate-pop-in text-warn" fill="currentColor" />
             <XpCount xp={xp} /> XP
           </Link>
@@ -123,15 +120,15 @@ export function MobileNav({ path }: { path: string }) {
       className="fixed inset-x-0 bottom-0 z-30 border-t border-line bg-surface/95 pb-[env(safe-area-inset-bottom)] backdrop-blur-md lg:hidden"
       aria-label="Навигация"
     >
-      <div className="grid grid-cols-5">
+      <div className="grid grid-cols-6">
         {NAV.map((item) => {
           const { to, label, icon: Icon } = item
           const active = isActive(path, item)
           return (
-            <Link key={to} to={to} className={`relative flex min-w-0 flex-col items-center gap-1 py-2.5 text-[11px] font-semibold transition-colors ${active ? activeText(item) : 'text-muted'}`}>
+            <Link key={to} to={to} className={`relative flex min-w-0 flex-col items-center gap-1 py-2.5 text-[10px] font-semibold transition-colors min-[400px]:text-[11px] ${active ? activeText(item) : 'text-muted'}`}>
               <span className={`absolute top-0 h-0.5 rounded-full bg-current transition-all duration-300 ${active ? 'w-8 opacity-100' : 'w-0 opacity-0'}`} />
               <Icon size={20} strokeWidth={active ? 2.4 : 2} className={`transition-transform duration-300 ${active ? '-translate-y-0.5 scale-110' : ''}`} />
-              {label}
+              <span className="max-w-full truncate tracking-tight">{label}</span>
             </Link>
           )
         })}

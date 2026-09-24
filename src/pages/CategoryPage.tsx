@@ -2,8 +2,8 @@ import { ArrowLeft, ArrowRight, Award, CalendarDays, CalendarCheck, Dumbbell, Ga
 import { Heatmap, WEEKS } from '../components/Heatmap'
 import { Cascade, CountUp, delay, riseOn, useAfterMount } from '../components/Motion'
 import { CategoryIcon, LevelBadge, ModuleIcon, Page, ProgressBar, Stat } from '../components/ui'
-import { CATEGORY_BY_ID } from '../content/categories'
-import { LEVELS } from '../content/levels'
+import { CATEGORY_BY_ID, isGradeCategory } from '../content/categories'
+import { gradeOf, LEVELS, levelLabel, levelShort } from '../content/levels'
 import { MODULE_BY_ID, modulesOf } from '../content/modules'
 import { TASK_BY_ID, tasksOf } from '../lib/catalog'
 import { NO_GENERATOR } from '../lib/endless'
@@ -23,6 +23,10 @@ export function CategoryPage({ category }: { category: CategoryId }) {
   const achs = categoryAchievements(state, category, stats)
   const ready = useAfterMount()
   const base = `/c/${category}`
+  // Школьные предметы: вместо теста уровня ученик выбирает свой класс.
+  const grades = isGradeCategory(category)
+  const grade = state.settings.grade
+  const setGrade = useProgress((s) => s.setGrade)
 
   const last = lastTaskId ? TASK_BY_ID.get(lastTaskId) : undefined
   const lastHere = last && categoryOf(last.module) === category ? last : undefined
@@ -32,7 +36,7 @@ export function CategoryPage({ category }: { category: CategoryId }) {
       ? nextTaskIn(state, lastHere.module)
       : lastHere
     : modules.map((m) => nextTaskIn(state, m.id)).find(Boolean) ?? null
-  const daily = dailyTask(new Date(), category)
+  const daily = dailyTask(new Date(), category, grade)
   const dailyDone = !!records[daily.id]?.solved
   const withGenerator = modules.some((m) => !NO_GENERATOR.includes(m.id))
   const lastDate = stats.lastAt ? new Date(stats.lastAt).toLocaleDateString('ru-RU', { day: 'numeric', month: 'long' }) : null
@@ -55,31 +59,59 @@ export function CategoryPage({ category }: { category: CategoryId }) {
             <h1 className="h-display mt-1 text-2xl sm:text-3xl">{cat.title}</h1>
             <p className="mt-2 max-w-2xl leading-relaxed text-muted">{cat.description}</p>
           </div>
-          <div className="animate-fade-up" style={delay(1)}>
-            {placement ? (
-              <LevelBadge level={placement.level} />
-            ) : (
-              <span className="chip">
-                <Gauge size={13} /> Уровень не определён
-              </span>
-            )}
-          </div>
+          {grades ? (
+            <div className="w-full animate-fade-up sm:w-auto" style={delay(1)}>
+              <p className={`text-xs font-bold uppercase tracking-[0.14em] ${cat.text}`}>{grade ? 'Ваш класс' : 'Выберите класс'}</p>
+              <div className="mt-2 flex gap-1.5" role="radiogroup" aria-label="Ваш класс">
+                {LEVELS.map((l) => {
+                  const g = gradeOf(l.id)
+                  const on = grade === g
+                  return (
+                    <button
+                      key={l.id}
+                      role="radio"
+                      aria-checked={on}
+                      title={levelLabel(l.id, true)}
+                      onClick={() => setGrade(g)}
+                      className={`inline-flex h-11 w-11 items-center justify-center rounded-xl border font-display text-base font-semibold transition duration-200 hover:-translate-y-0.5 active:scale-95 ${
+                        on ? `border-transparent text-white shadow-lift ${cat.bg}` : 'border-line bg-surface text-muted hover:text-ink'
+                      }`}
+                    >
+                      {g}
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
+          ) : (
+            <div className="animate-fade-up" style={delay(1)}>
+              {placement ? (
+                <LevelBadge level={placement.level} />
+              ) : (
+                <span className="chip">
+                  <Gauge size={13} /> Уровень не определён
+                </span>
+              )}
+            </div>
+          )}
         </div>
         <div className="relative mt-6 flex flex-wrap gap-2 sm:gap-3">
           {continueTask && (
             <Link to={`/task/${continueTask.id}`} className={`btn group text-white shadow-lift hover:brightness-110 ${cat.bg}`}>
               <Play size={16} fill="currentColor" /> {lastHere ? 'Продолжить' : 'Начать'}
               <span className="hidden font-medium opacity-90 sm:inline">
-                · {MODULE_BY_ID[continueTask.module].title}, ур. {continueTask.level}
+                · {MODULE_BY_ID[continueTask.module].title}, {grades ? levelShort(continueTask.level, true) : `ур. ${continueTask.level}`}
               </span>
             </Link>
           )}
           <Link to={`${base}/practice`} className="btn-ghost">
             <Dumbbell size={16} className={cat.text} /> Тренировка
           </Link>
-          <Link to={`${base}/test`} className="btn-ghost">
-            <Gauge size={16} className={cat.text} /> {placement ? 'Пройти тест заново' : 'Тест уровня'}
-          </Link>
+          {!grades && (
+            <Link to={`${base}/test`} className="btn-ghost">
+              <Gauge size={16} className={cat.text} /> {placement ? 'Пройти тест заново' : 'Тест уровня'}
+            </Link>
+          )}
           <Link to={`${base}/daily`} className="btn-ghost">
             <CalendarDays size={16} className="text-warn" /> Задача дня {dailyDone && <span className="text-good">✓</span>}
           </Link>
@@ -115,18 +147,24 @@ export function CategoryPage({ category }: { category: CategoryId }) {
           </span>
           <div className="relative min-w-0 flex-1 basis-60">
             <h2 className="font-bold">Новые задачи без конца</h2>
-            <p className="text-sm text-muted">Выберите уровень — задачи по темам направления создаются автоматически и не повторяются.</p>
+            <p className="text-sm text-muted">
+              {grades
+                ? 'Выберите класс — задачи по всем предметам создаются автоматически и не повторяются.'
+                : 'Выберите уровень — задачи по темам направления создаются автоматически и не повторяются.'}
+            </p>
           </div>
-          <div className="relative flex flex-wrap gap-2" aria-label="Уровень новых задач">
+          <div className="relative flex flex-wrap gap-2" aria-label={grades ? 'Класс новых задач' : 'Уровень новых задач'}>
             {LEVELS.map((l, i) => (
               <Link
                 key={l.id}
                 to={`${base}/practice?gen=1&l=${l.id}&start=1`}
-                title={`Уровень ${l.id} · ${l.name}`}
+                title={levelLabel(l.id, grades)}
                 style={delay(i + 2, 70)}
-                className={`inline-flex h-11 w-11 animate-pop-in items-center justify-center rounded-xl font-display text-base font-semibold text-white transition hover:-translate-y-1 hover:scale-105 hover:shadow-lift active:scale-95 ${l.bg}`}
+                className={`inline-flex h-11 w-11 animate-pop-in items-center justify-center rounded-xl font-display text-base font-semibold text-white transition hover:-translate-y-1 hover:scale-105 hover:shadow-lift active:scale-95 ${l.bg} ${
+                  grades && grade === gradeOf(l.id) ? 'ring-2 ring-ink/70 ring-offset-2 ring-offset-surface' : ''
+                }`}
               >
-                {l.id}
+                {grades ? gradeOf(l.id) : l.id}
               </Link>
             ))}
           </div>
@@ -134,7 +172,12 @@ export function CategoryPage({ category }: { category: CategoryId }) {
       )}
 
       {/* Темы */}
-      <h2 className="h-display mt-10 text-xl">Темы</h2>
+      <h2 className="h-display mt-10 text-xl">{grades ? 'Предметы' : 'Темы'}</h2>
+      {grades && (
+        <p className="mt-1 text-sm text-muted">
+          {grade ? `Задачи и теория откроются на программе ${grade} класса; другие классы — во вкладках внутри предмета.` : 'Выберите класс вверху — задачи откроются на программе вашего класса.'}
+        </p>
+      )}
       <Cascade className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
         {(shown) =>
           modules.map((m, i) => {
@@ -163,15 +206,15 @@ export function CategoryPage({ category }: { category: CategoryId }) {
                     const pct = list.length ? solvedCount(records, list) / list.length : 0
                     const open = isUnlocked(state, m.id, l.id)
                     return (
-                      <div key={l.id} title={`Уровень ${l.id}: ${Math.round(pct * 100)}%${open ? '' : ' (закрыт)'}`}>
+                      <div key={l.id} title={`${grades ? levelLabel(l.id, true) : `Уровень ${l.id}`}: ${Math.round(pct * 100)}%${open ? '' : ' (закрыт)'}`}>
                         <div className={`h-1.5 overflow-hidden rounded-full ${open ? 'bg-surface-2' : 'bg-surface-2 opacity-40'}`}>
                           <div
                             className={`h-full rounded-full transition-[width] duration-1000 ease-out ${l.bg}`}
                             style={{ width: `${ready && shown ? pct * 100 : 0}%`, transitionDelay: `${i * 60 + l.id * 60}ms` }}
                           />
                         </div>
-                        <div className={`mt-1 flex items-center justify-center text-[10px] font-bold ${open ? l.text : 'text-faint'}`}>
-                          {open ? l.id : <Lock size={9} />}
+                        <div className={`mt-1 flex items-center justify-center text-[10px] font-bold ${open ? l.text : 'text-faint'} ${grades && grade === gradeOf(l.id) ? 'underline underline-offset-2' : ''}`}>
+                          {open ? (grades ? gradeOf(l.id) : l.id) : <Lock size={9} />}
                         </div>
                       </div>
                     )
@@ -187,7 +230,7 @@ export function CategoryPage({ category }: { category: CategoryId }) {
       <h2 className="h-display mt-10 text-xl">Статистика</h2>
       <div className="mt-4 grid gap-4 lg:grid-cols-2">
         <section className="card min-w-0 p-5 sm:p-6">
-          <h3 className="font-bold">По уровням</h3>
+          <h3 className="font-bold">{grades ? 'По классам' : 'По уровням'}</h3>
           <div className="mt-4 space-y-3.5">
             {LEVELS.map((l) => {
               const list = tasksOfCategory(category).filter((t) => t.level === l.id)
@@ -195,9 +238,7 @@ export function CategoryPage({ category }: { category: CategoryId }) {
               return (
                 <div key={l.id}>
                   <div className="flex justify-between text-sm">
-                    <span className={`font-bold ${l.text}`}>
-                      {l.id}. {l.name}
-                    </span>
+                    <span className={`font-bold ${l.text}`}>{grades ? levelLabel(l.id, true) : `${l.id}. ${l.name}`}</span>
                     <span className="font-semibold text-muted">
                       {done} / {list.length}
                     </span>
@@ -209,7 +250,7 @@ export function CategoryPage({ category }: { category: CategoryId }) {
           </div>
         </section>
         <section className="card min-w-0 p-5 sm:p-6">
-          <h3 className="font-bold">По темам</h3>
+          <h3 className="font-bold">{grades ? 'По предметам' : 'По темам'}</h3>
           <div className="mt-4 space-y-3">
             {modules.map((m) => {
               const list = tasksOf(m.id)

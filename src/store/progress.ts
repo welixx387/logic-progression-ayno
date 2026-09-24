@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
-import { CATEGORIES } from '../content/categories'
+import { CATEGORIES, isGradeCategory } from '../content/categories'
 import { levelInfo } from '../content/levels'
 import { MODULE_BY_ID, MODULES } from '../content/modules'
 import { tasksOf, TASKS } from '../lib/catalog'
@@ -16,6 +16,8 @@ interface Settings {
   theme: Theme
   /** Открыть все уровни без условий. */
   openAll: boolean
+  /** Класс ученика для школьного направления (7–11). */
+  grade?: number
 }
 
 interface ProgressState {
@@ -41,6 +43,7 @@ interface ProgressState {
   setPlacement: (category: CategoryId, level: Level, score: number[]) => void
   setTheme: (theme: Theme) => void
   setOpenAll: (open: boolean) => void
+  setGrade: (grade: number) => void
   reset: () => void
   importState: (data: unknown) => boolean
   /** Вливает прогресс с другого устройства; возвращает true, если что-то изменилось. */
@@ -112,6 +115,7 @@ export const useProgress = create<ProgressState>()(
       setPlacement: (category, level, score) => set((s) => ({ placements: { ...s.placements, [category]: { level, score, at: Date.now() } } })),
       setTheme: (theme) => set((s) => ({ settings: { ...s.settings, theme } })),
       setOpenAll: (openAll) => set((s) => ({ settings: { ...s.settings, openAll } })),
+      setGrade: (grade) => set((s) => ({ settings: { ...s.settings, grade } })),
       reset: () => set({ ...empty() }),
 
       importState: (data) => {
@@ -211,6 +215,8 @@ export function unlockNeed(module: ModuleId, level: Level) {
 
 export function isUnlocked(state: Pick<ProgressState, 'records' | 'placements' | 'settings'>, module: ModuleId, level: Level) {
   if (level === 1 || state.settings.openAll) return true
+  // Школьные предметы: класс выбирают сами, классы не закрываются.
+  if (isGradeCategory(categoryOf(module))) return true
   const placement = state.placements[categoryOf(module)]
   if (placement && placement.level >= level) return true
   const prev = tasksOf(module, (level - 1) as Level)
@@ -219,7 +225,9 @@ export function isUnlocked(state: Pick<ProgressState, 'records' | 'placements' |
 
 /** Следующая нерешённая задача в теме, начиная с открытых уровней. */
 export function nextTaskIn(state: Pick<ProgressState, 'records' | 'placements' | 'settings'>, module: ModuleId): Task | null {
-  const start = state.placements[categoryOf(module)]?.level ?? 1
+  const cat = categoryOf(module)
+  // В школьном направлении начинаем с класса ученика.
+  const start = isGradeCategory(cat) && state.settings.grade ? state.settings.grade - 6 : (state.placements[cat]?.level ?? 1)
   const order = [start, 1, 2, 3, 4, 5].filter((v, i, a) => a.indexOf(v) === i) as Level[]
   for (const level of order) {
     if (!isUnlocked(state, module, level)) continue
@@ -229,18 +237,26 @@ export function nextTaskIn(state: Pick<ProgressState, 'records' | 'placements' |
   return null
 }
 
-/** Задача дня — одна и та же для всех в этот день. */
-export function dailyTask(date = new Date(), category?: CategoryId): Task {
-  const key = category ? `${dayKey(date)}:${category}` : dayKey(date)
+/**
+ * Задача дня — одна и та же для всех в этот день. Общая задача дня берётся
+ * из направлений мышления; в школьном направлении — из задач своего класса.
+ */
+export function dailyTask(date = new Date(), category?: CategoryId, grade?: number): Task {
+  const byGrade = !!category && isGradeCategory(category) && !!grade
+  const key = category ? `${dayKey(date)}:${category}${byGrade ? `:${grade}` : ''}` : dayKey(date)
   let h = 2166136261
   for (let i = 0; i < key.length; i++) h = Math.imul(h ^ key.charCodeAt(i), 16777619)
-  const pool = TASKS.filter((t) => t.level >= 2 && t.level <= 4 && (!category || MODULE_BY_ID[t.module].category === category))
+  const inLevels = (t: Task) => (byGrade ? t.level === grade! - 6 : t.level >= 2 && t.level <= 4)
+  const pool = TASKS.filter((t) => {
+    const c = MODULE_BY_ID[t.module].category
+    return inLevels(t) && (category ? c === category : !isGradeCategory(c))
+  })
   return pool[(h >>> 0) % pool.length]
 }
 
 /** Достижения внутри одного направления. */
 export function categoryAchievements(
-  state: Pick<ProgressState, 'records' | 'placements'>,
+  state: Pick<ProgressState, 'records' | 'placements' | 'settings'>,
   category: CategoryId,
   stats: { solved: number; solvedNew: number; expert: number },
 ): Achievement[] {
@@ -249,15 +265,22 @@ export function categoryAchievements(
   const touched = mods.filter((m) => tasksOf(m.id).some((t) => solvedIds.has(t.id))).length
   const full = mods.some((m) => tasksOf(m.id).every((t) => solvedIds.has(t.id)))
   const all = stats.solved + stats.solvedNew
+  const grades = isGradeCategory(category)
   return [
     { id: 'first', title: 'Первый шаг', description: 'Решить первую задачу направления', done: all >= 1 },
-    { id: 'test', title: 'Знаю свой уровень', description: 'Пройти тест уровня направления', done: !!state.placements[category] },
+    grades
+      ? { id: 'grade', title: 'Мой класс', description: 'Выбрать свой класс', done: !!state.settings.grade }
+      : { id: 'test', title: 'Знаю свой уровень', description: 'Пройти тест уровня направления', done: !!state.placements[category] },
     { id: 'ten', title: 'Десятка', description: 'Решить 10 задач', done: all >= 10 },
-    { id: 'topics', title: 'Все темы', description: `Решить задачу в каждой из ${mods.length} тем`, done: touched === mods.length },
-    { id: 'expert', title: 'Эксперт', description: 'Решить задачу 5-го уровня', done: stats.expert > 0 },
+    grades
+      ? { id: 'topics', title: 'Все предметы', description: `Решить задачу по каждому из ${mods.length} предметов`, done: touched === mods.length }
+      : { id: 'topics', title: 'Все темы', description: `Решить задачу в каждой из ${mods.length} тем`, done: touched === mods.length },
+    grades
+      ? { id: 'expert', title: 'Выпускник', description: 'Решить задачу 11 класса', done: stats.expert > 0 }
+      : { id: 'expert', title: 'Эксперт', description: 'Решить задачу 5-го уровня', done: stats.expert > 0 },
     { id: 'fifty', title: 'Полсотни', description: 'Решить 50 задач', done: all >= 50 },
     { id: 'new', title: 'Без конца', description: 'Решить 10 новых задач', done: stats.solvedNew >= 10 },
-    { id: 'master', title: 'Мастер темы', description: 'Решить все задачи одной темы', done: full },
+    { id: 'master', title: grades ? 'Отличник' : 'Мастер темы', description: grades ? 'Решить все задачи одного предмета' : 'Решить все задачи одной темы', done: full },
   ]
 }
 
@@ -281,7 +304,7 @@ export function achievements(state: Pick<ProgressState, 'records' | 'placements'
     { id: 'first', title: 'Первый шаг', description: 'Решить первую задачу', done: solved.length >= 1 },
     { id: 'ten', title: 'Разогрев', description: 'Решить 10 задач', done: solved.length >= 10 },
     { id: 'test', title: 'Знаю свой уровень', description: 'Пройти тест уровня', done: Object.keys(state.placements).length > 0 },
-    { id: 'four', title: 'Разносторонний ум', description: 'Решить задачу в каждом из четырёх направлений', done: allDirections },
+    { id: 'four', title: 'Разносторонний ум', description: 'Решить задачу в каждом направлении', done: allDirections },
     { id: 'run5', title: 'Без промаха', description: '5 задач подряд с первой попытки', done: state.bestRun >= 5 },
     { id: 'streak3', title: 'Привычка', description: 'Заниматься 3 дня подряд', done: streakBest >= 3 },
     { id: 'hundred', title: 'Сотня', description: 'Решить 100 задач', done: solved.length >= 100 },

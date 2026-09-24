@@ -24,6 +24,19 @@ import { recognizeGenerator } from './recognize.ts'
 import { regulationGenerator } from './regulation.ts'
 import { empathyGenerator } from './empathy.ts'
 import { zebraGenerator } from './zebra.ts'
+import { algebraGenerator } from './algebra.ts'
+import { geometryGenerator } from './geometry.ts'
+import { physicsGenerator } from './physics.ts'
+import { chemistryGenerator } from './chemistry.ts'
+import { biologyGenerator } from './biology.ts'
+import { informaticsGenerator } from './informatics.ts'
+import { russianGenerator } from './russian.ts'
+import { literatureGenerator } from './literature.ts'
+import { englishGenerator } from './english.ts'
+import { historyGenerator } from './history.ts'
+import { socialGenerator } from './social.ts'
+import { geographyGenerator } from './geography.ts'
+import { safetyGenerator } from './safety.ts'
 
 /** Все темы, задания которых создаются программой. «Нестандартные задачи» написаны вручную. */
 export const GENERATORS: Partial<Record<ModuleId, ModuleGenerator>> = {
@@ -51,6 +64,19 @@ export const GENERATORS: Partial<Record<ModuleId, ModuleGenerator>> = {
   recognize: recognizeGenerator,
   regulation: regulationGenerator,
   empathy: empathyGenerator,
+  algebra: algebraGenerator,
+  geometry: geometryGenerator,
+  physics: physicsGenerator,
+  chemistry: chemistryGenerator,
+  biology: biologyGenerator,
+  informatics: informaticsGenerator,
+  russian: russianGenerator,
+  literature: literatureGenerator,
+  english: englishGenerator,
+  history: historyGenerator,
+  social: socialGenerator,
+  geography: geographyGenerator,
+  safety: safetyGenerator,
 }
 
 export const GENERATED_MODULES = Object.keys(GENERATORS) as ModuleId[]

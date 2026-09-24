@@ -29,6 +29,19 @@ import { emotions } from '../src/generators/emotions.ts'
 import { recognize } from '../src/generators/recognize.ts'
 import { regulation } from '../src/generators/regulation.ts'
 import { empathy } from '../src/generators/empathy.ts'
+import { algebra } from '../src/generators/algebra.ts'
+import { geometry } from '../src/generators/geometry.ts'
+import { physics } from '../src/generators/physics.ts'
+import { chemistry } from '../src/generators/chemistry.ts'
+import { biology } from '../src/generators/biology.ts'
+import { informatics } from '../src/generators/informatics.ts'
+import { russian } from '../src/generators/russian.ts'
+import { literature } from '../src/generators/literature.ts'
+import { english } from '../src/generators/english.ts'
+import { history } from '../src/generators/history.ts'
+import { social } from '../src/generators/social.ts'
+import { geography } from '../src/generators/geography.ts'
+import { safety } from '../src/generators/safety.ts'
 
 const generators: [string, () => Task[]][] = [
   ['sequences', sequences],
@@ -56,6 +69,19 @@ const generators: [string, () => Task[]][] = [
   ['recognize', recognize],
   ['regulation', regulation],
   ['empathy', empathy],
+  ['algebra', algebra],
+  ['geometry', geometry],
+  ['physics', physics],
+  ['chemistry', chemistry],
+  ['biology', biology],
+  ['informatics', informatics],
+  ['russian', russian],
+  ['literature', literature],
+  ['english', english],
+  ['history', history],
+  ['social', social],
+  ['geography', geography],
+  ['safety', safety],
 ]
 
 const only = process.argv[2]

@@ -3,9 +3,9 @@ import { useRef, useState } from 'react'
 import { Heatmap, WEEKS } from '../components/Heatmap'
 import { Cascade, CountUp, delay, riseOn } from '../components/Motion'
 import { CategoryIcon, LevelBadge, ModuleIcon, Page, ProgressBar, Stat } from '../components/ui'
-import { CATEGORIES } from '../content/categories'
+import { CATEGORIES, isGradeCategory } from '../content/categories'
 import { LEVELS, RANKS, rankFor } from '../content/levels'
-import { modulesOf } from '../content/modules'
+import { MODULE_BY_ID, modulesOf } from '../content/modules'
 import { TASKS, tasksOf, tasksOfLevel } from '../lib/catalog'
 import { dayKey, streaks } from '../lib/dates'
 import { Link } from '../lib/router'
@@ -97,7 +97,9 @@ export function Progress() {
                       </span>
                     </div>
                     <ProgressBar value={done} max={list.length} className="mt-1.5" color={c.bg} />
-                    <div className="mt-1.5 text-xs text-muted">{placement ? <LevelBadge level={placement.level} /> : 'Тест уровня не пройден'}</div>
+                    <div className="mt-1.5 text-xs text-muted">
+                      {isGradeCategory(c.id) ? (state.settings.grade ? `${state.settings.grade} класс` : 'Класс не выбран') : placement ? <LevelBadge level={placement.level} /> : 'Тест уровня не пройден'}
+                    </div>
                   </div>
                 </Link>
               )
@@ -118,7 +120,8 @@ export function Progress() {
           <h2 className="font-bold">По уровням</h2>
           <div className="mt-4 space-y-3.5">
             {LEVELS.map((l) => {
-              const list = tasksOfLevel(l.id)
+              // Классы школьных предметов — не уровни сложности, их считаем на странице «Школа».
+              const list = tasksOfLevel(l.id).filter((t) => !isGradeCategory(MODULE_BY_ID[t.module].category))
               const done = solvedCount(records, list)
               return (
                 <div key={l.id}>

@@ -17,7 +17,7 @@ import { Practice } from './pages/Practice'
 import { Progress } from './pages/Progress'
 import { TaskPage } from './pages/TaskPage'
 import { useAuth } from './store/auth'
-import { dailyTask } from './store/progress'
+import { dailyTask, useProgress } from './store/progress'
 import type { CategoryId, ModuleId } from './types'
 
 /** Перенаправление со старых адресов на новые. */
@@ -52,7 +52,7 @@ function Screen({ path, query }: { path: string; query: URLSearchParams }) {
     if (!cat.section) return <CategoryPage category={c} />
     if (cat.section === 'practice') return <Practice key={query.toString()} query={query} category={c} />
     if (cat.section === 'test') return <PlacementTest category={c} />
-    if (cat.section === 'daily') return <TaskPage id={dailyTask(new Date(), c).id} daily />
+    if (cat.section === 'daily') return <TaskPage id={dailyTask(new Date(), c, useProgress.getState().settings.grade).id} daily />
   }
   const mod = match('/module/:id', path)
   if (mod) return <ModulePage id={mod.id} levelParam={query.get('l')} />

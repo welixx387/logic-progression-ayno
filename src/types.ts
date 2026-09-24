@@ -1,7 +1,7 @@
 export type Level = 1 | 2 | 3 | 4 | 5
 
 /** Направление курса: логика, стратегия, анализ или эмоции. */
-export type CategoryId = 'logic' | 'strategy' | 'analytics' | 'emotional'
+export type CategoryId = 'logic' | 'strategy' | 'analytics' | 'emotional' | 'academic'
 
 export type ModuleId =
   | 'sequences'
@@ -32,6 +32,20 @@ export type ModuleId =
   | 'recognize'
   | 'regulation'
   | 'empathy'
+  // Академические способности: школьные предметы, уровни — 7–11 классы
+  | 'algebra'
+  | 'geometry'
+  | 'physics'
+  | 'chemistry'
+  | 'biology'
+  | 'informatics'
+  | 'russian'
+  | 'literature'
+  | 'english'
+  | 'history'
+  | 'social'
+  | 'geography'
+  | 'safety'
 
 /** Как отвечать: выбрать вариант, ввести число или ввести текст. */
 export type TaskKind = 'choice' | 'number' | 'text'

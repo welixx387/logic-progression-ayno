@@ -3,8 +3,8 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { Burst, CountUp, delay } from '../components/Motion'
 import { TaskCard } from '../components/TaskCard'
 import { LevelBadge, MODULE_ICONS, Page, ProgressBar } from '../components/ui'
-import { CATEGORY_BY_ID } from '../content/categories'
-import { LEVELS } from '../content/levels'
+import { CATEGORY_BY_ID, isGradeCategory } from '../content/categories'
+import { gradeOf, LEVELS, levelLabel } from '../content/levels'
 import { MODULE_BY_ID, MODULES, modulesOf } from '../content/modules'
 import { tasksOf } from '../lib/catalog'
 import { generateTask, NO_GENERATOR } from '../lib/endless'
@@ -50,8 +50,11 @@ export function Practice({ query, category }: { query: URLSearchParams; category
   const preLevel = Number(query.get('l'))
   const cat = CATEGORY_BY_ID[category]
   const catModules = modulesOf(category)
+  // В школьном направлении уровни — это классы 7–11, по умолчанию — класс ученика.
+  const grades = isGradeCategory(category)
+  const defaultLevel = grades ? (state.settings.grade ? state.settings.grade - 6 : 1) : (state.placements[category]?.level ?? 1)
   const [source, setSource] = useState<Source>(query.get('gen') === '0' ? 'course' : 'new')
-  const [level, setLevel] = useState<Level>((preLevel >= 1 && preLevel <= 5 ? preLevel : state.placements[category]?.level ?? 1) as Level)
+  const [level, setLevel] = useState<Level>((preLevel >= 1 && preLevel <= 5 ? preLevel : defaultLevel) as Level)
   const [modules, setModules] = useState<ModuleId[]>(preModules.length ? preModules : catModules.map((m) => m.id))
 
   const [count, setCount] = useState<number | null>(source === 'new' ? null : 10)
@@ -222,21 +225,21 @@ export function Practice({ query, category }: { query: URLSearchParams; category
           <div className="mt-3 h-2 animate-shine rounded-full bg-gradient-to-r from-accent-soft via-accent/45 to-accent-soft bg-[length:200%_auto]" />
         )}
         {session.source === 'new' && (
-          <div className="mt-4 flex flex-wrap items-center gap-2" role="radiogroup" aria-label="Уровень новых задач">
-            <span className="text-sm font-semibold text-muted">Уровень:</span>
+          <div className="mt-4 flex flex-wrap items-center gap-2" role="radiogroup" aria-label={grades ? 'Класс новых задач' : 'Уровень новых задач'}>
+            <span className="text-sm font-semibold text-muted">{grades ? 'Класс:' : 'Уровень:'}</span>
             {LEVELS.map((l) => (
               <button
                 key={l.id}
                 role="radio"
                 aria-checked={session.level === l.id}
-                title={l.name}
+                title={grades ? levelLabel(l.id, true) : l.name}
                 onClick={() => switchLevel(l.id)}
                 className={`inline-flex h-9 min-w-9 items-center justify-center gap-1.5 rounded-xl border px-2.5 text-sm font-bold transition active:scale-95 ${
                   session.level === l.id ? `border-transparent ${l.bg} text-white` : 'border-line bg-surface text-muted hover:text-ink'
                 }`}
               >
-                {l.id}
-                <span className="hidden sm:inline">{session.level === l.id ? `· ${l.name}` : ''}</span>
+                {grades ? gradeOf(l.id) : l.id}
+                <span className="hidden sm:inline">{session.level === l.id ? (grades ? 'класс' : `· ${l.name}`) : ''}</span>
               </button>
             ))}
           </div>
@@ -245,7 +248,7 @@ export function Practice({ query, category }: { query: URLSearchParams; category
         {task ? (
           <>
             <div className="mt-5 flex flex-wrap items-center gap-2">
-              <LevelBadge level={task.level} />
+              <LevelBadge level={task.level} grades={grades} />
               <span className="chip">{MODULE_BY_ID[task.module].title}</span>
               {session.source === 'new' && <span className="chip text-accent">новая задача</span>}
             </div>
@@ -286,11 +289,13 @@ export function Practice({ query, category }: { query: URLSearchParams; category
           <div className="card mt-6 animate-fade-up p-6 text-center">
             <p className="font-bold">Новые задачи этого типа закончились</p>
             <p className="mt-1 text-sm text-muted">
-              Вы увидели все варианты, которые умеет создавать генератор для выбранных тем на уровне {session.level}. Выберите другой уровень или другие темы.
+              {grades
+                ? `Вы увидели все варианты, которые умеет создавать генератор для выбранных предметов за ${levelLabel(session.level, true)}. Выберите другой класс или другие предметы.`
+                : `Вы увидели все варианты, которые умеет создавать генератор для выбранных тем на уровне ${session.level}. Выберите другой уровень или другие темы.`}
             </p>
             <div className="mt-5 flex flex-wrap justify-center gap-2">
               <button className="btn-primary" onClick={() => setSession(null)}>
-                Выбрать уровень и темы
+                {grades ? 'Выбрать класс и предметы' : 'Выбрать уровень и темы'}
               </button>
               <button className="btn-ghost" onClick={() => setFinished(true)}>
                 К итогам
@@ -349,7 +354,7 @@ export function Practice({ query, category }: { query: URLSearchParams; category
       </div>
 
       <section className="card mt-4 animate-fade-up p-5 sm:p-6" style={delay(1, 90)}>
-        <h2 className="font-bold">Уровень</h2>
+        <h2 className="font-bold">{grades ? 'Класс' : 'Уровень'}</h2>
         <div className="mt-3 flex flex-wrap gap-2">
           {LEVELS.map((l) => (
             <button
@@ -360,13 +365,13 @@ export function Practice({ query, category }: { query: URLSearchParams; category
               }`}
             >
               <span className={`mr-1.5 inline-block h-2 w-2 rounded-full transition-transform duration-300 ${level === l.id ? 'scale-150' : ''} ${l.bg}`} />
-              {l.id} · {l.name}
+              {grades ? levelLabel(l.id, true) : `${l.id} · ${l.name}`}
             </button>
           ))}
         </div>
 
         <div className="mt-6 flex items-center justify-between gap-3">
-          <h2 className="font-bold">Темы</h2>
+          <h2 className="font-bold">{grades ? 'Предметы' : 'Темы'}</h2>
           <button className={`text-sm font-semibold ${cat.text}`} onClick={() => setModules(modules.length === catModules.length ? [] : catModules.map((m) => m.id))}>
             {modules.length === catModules.length ? 'Снять все' : 'Выбрать все'}
           </button>
@@ -425,12 +430,12 @@ export function Practice({ query, category }: { query: URLSearchParams; category
           <span className="text-sm text-muted">
             {source === 'new'
               ? available.length
-                ? `Тем: ${available.length}. Уже показано новых задач: ${state.seen.length}.`
-                : 'Выберите хотя бы одну тему.'
+                ? `${grades ? 'Предметов' : 'Тем'}: ${available.length}. Уже показано новых задач: ${state.seen.length}.`
+                : grades ? 'Выберите хотя бы один предмет.' : 'Выберите хотя бы одну тему.'
               : coursePool.length
                 ? `Доступно задач: ${coursePool.length}`
                 : usable('course').length
-                  ? 'Все задачи этого уровня уже решены — попробуйте «Новые задачи».'
+                  ? `Все задачи ${grades ? 'этого класса' : 'этого уровня'} уже решены — попробуйте «Новые задачи».`
                   : 'Этот уровень в выбранных темах ещё закрыт — а в «Новых задачах» доступен сразу.'}
           </span>
         </div>
@@ -438,9 +443,11 @@ export function Practice({ query, category }: { query: URLSearchParams; category
 
       <div key={source} className="mt-4 flex animate-fade-up items-start gap-3 rounded-2xl bg-surface-2 p-4 text-sm text-muted">
         {source === 'new' ? <Sparkles size={18} className="mt-0.5 shrink-0 text-accent" /> : <Lock size={18} className="mt-0.5 shrink-0 text-accent" />}
-        {source === 'new'
-          ? 'Новые задачи доступны на любом уровне — выберите сложность сами. Сменить уровень можно и во время тренировки.'
-          : 'Закрытые уровни открываются в курсе: решите половину задач предыдущего уровня темы или пройдите тест уровня.'}
+        {grades
+          ? 'Задачи всех классов открыты сразу — выберите свой или соседний, чтобы повторить или забежать вперёд. Класс можно сменить и во время тренировки.'
+          : source === 'new'
+            ? 'Новые задачи доступны на любом уровне — выберите сложность сами. Сменить уровень можно и во время тренировки.'
+            : 'Закрытые уровни открываются в курсе: решите половину задач предыдущего уровня темы или пройдите тест уровня.'}
       </div>
     </Page>
   )

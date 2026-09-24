@@ -28,6 +28,7 @@
   --cat-strategy: 214 110 12;
   --cat-analytics: 8 140 172;
   --cat-emotional: 220 55 115;
+  --cat-academic: 16 140 90;
   --shadow: 40 30 90;
   color-scheme: light;
 }
@@ -58,6 +59,7 @@
   --cat-strategy: 245 165 70;
   --cat-analytics: 45 200 225;
   --cat-emotional: 244 114 170;
+  --cat-academic: 60 205 140;
   --shadow: 0 0 0;
   color-scheme: dark;
 }

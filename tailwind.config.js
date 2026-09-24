@@ -28,7 +28,7 @@ export default {
         lvl3: token('lvl3'),
         lvl4: token('lvl4'),
         lvl5: token('lvl5'),
-        cat: { logic: token('cat-logic'), strategy: token('cat-strategy'), analytics: token('cat-analytics'), emotional: token('cat-emotional') },
+        cat: { logic: token('cat-logic'), strategy: token('cat-strategy'), analytics: token('cat-analytics'), emotional: token('cat-emotional'), academic: token('cat-academic') },
       },
       borderRadius: {
         xl: '14px',
