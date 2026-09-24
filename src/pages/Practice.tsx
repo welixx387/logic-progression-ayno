@@ -89,6 +89,8 @@ export function Practice({ query }: { query: URLSearchParams }) {
 
   const start = (src: Source = source) => {
     const mods = usable(src)
+    // Нет открытых тем на этом уровне — остаёмся на экране настроек, там это объяснено.
+    if (!mods.length || (src === 'course' && !coursePool.length)) return
     const s: Session =
       src === 'course'
         ? { source: src, modules: mods, level, limit: count, tasks: shuffle(coursePool).slice(0, count ?? coursePool.length) }
