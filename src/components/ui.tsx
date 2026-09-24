@@ -17,6 +17,7 @@ import {
 import type { ReactNode } from 'react'
 import { LEVELS, levelInfo } from '../content/levels'
 import type { Level, ModuleId } from '../types'
+import { useAfterMount } from './Motion'
 
 export const MODULE_ICONS: Record<ModuleId, LucideIcon> = {
   sequences: TrendingUp,
@@ -39,7 +40,7 @@ export function ModuleIcon({ id, size = 'md' }: { id: ModuleId; size?: 'sm' | 'm
   const box = size === 'lg' ? 'h-14 w-14 rounded-2xl' : size === 'sm' ? 'h-8 w-8 rounded-lg' : 'h-11 w-11 rounded-xl'
   const icon = size === 'lg' ? 26 : size === 'sm' ? 16 : 21
   return (
-    <span className={`inline-flex shrink-0 items-center justify-center bg-accent-soft text-accent ${box}`}>
+    <span className={`inline-flex shrink-0 items-center justify-center bg-accent-soft text-accent transition duration-300 group-hover:-rotate-6 group-hover:scale-110 ${box}`}>
       <Icon size={icon} strokeWidth={2} />
     </span>
   )
@@ -47,9 +48,11 @@ export function ModuleIcon({ id, size = 'md' }: { id: ModuleId; size?: 'sm' | 'm
 
 export function ProgressBar({ value, max, className = '', color = 'bg-accent' }: { value: number; max: number; className?: string; color?: string }) {
   const pct = max > 0 ? Math.min(100, Math.round((value / max) * 100)) : 0
+  // Полоса «вырастает» из нуля при появлении страницы.
+  const ready = useAfterMount()
   return (
     <div className={`h-2 overflow-hidden rounded-full bg-surface-2 ${className}`} role="progressbar" aria-valuenow={value} aria-valuemin={0} aria-valuemax={max}>
-      <div className={`h-full rounded-full transition-[width] duration-500 ${color}`} style={{ width: `${pct}%` }} />
+      <div className={`h-full rounded-full transition-[width] duration-1000 ease-out ${color}`} style={{ width: `${ready ? pct : 0}%` }} />
     </div>
   )
 }

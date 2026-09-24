@@ -1,5 +1,6 @@
 import { useEffect } from 'react'
 import { Footer, Header, MobileNav } from './components/Header'
+import { RankToast } from './components/RankToast'
 import { useCloudSync } from './lib/cloudSync'
 import { match, useRoute } from './lib/router'
 import { useAppliedTheme } from './lib/theme'
@@ -42,8 +43,12 @@ export default function App() {
     <div className="flex min-h-screen flex-col pb-[calc(4.5rem+env(safe-area-inset-bottom))] md:pb-0">
       <Header path={path} theme={theme} />
       <main className="flex-1">
-        <Screen path={path} query={query} />
+        {/* Ключ по адресу: при переходе новая страница плавно появляется. */}
+        <div key={path} className="animate-page">
+          <Screen path={path} query={query} />
+        </div>
       </main>
+      <RankToast />
       <Footer />
       <MobileNav path={path} />
     </div>

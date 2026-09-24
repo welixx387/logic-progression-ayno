@@ -1,5 +1,6 @@
-import { ArrowRight, CircleCheck, CircleX, Dumbbell, Infinity as InfinityIcon, Loader2, Lock, RotateCcw, Shuffle, Sparkles, Zap } from 'lucide-react'
+import { ArrowRight, CircleCheck, CircleX, Dumbbell, Infinity as InfinityIcon, Loader2, Lock, RotateCcw, Shuffle, Sparkles, Trophy, Zap } from 'lucide-react'
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { Burst, CountUp, delay } from '../components/Motion'
 import { TaskCard } from '../components/TaskCard'
 import { LevelBadge, MODULE_ICONS, Page, ProgressBar } from '../components/ui'
 import { LEVELS } from '../content/levels'
@@ -61,22 +62,25 @@ export function Practice({ query }: { query: URLSearchParams }) {
   const [finished, setFinished] = useState(false)
   const autoStarted = useRef(false)
 
+  // Новые задачи доступны на любом уровне — сложность выбирает сам человек.
+  // Задачи курса — только на открытых уровнях.
   const usable = (src: Source) =>
-    modules.filter((m) => isUnlocked(state, m, level) && (src === 'course' || !NO_GENERATOR.includes(m)))
+    modules.filter((m) => (src === 'new' ? !NO_GENERATOR.includes(m) : isUnlocked(state, m, level)))
   const coursePool = usable('course')
     .flatMap((m) => tasksOf(m, level))
     .filter((t) => !onlyNew || !state.records[t.id]?.solved)
 
   /** Создаёт следующее задание для сессии «новые задачи». */
-  const inFlight = useRef(false)
+  const inFlight = useRef<Session | null>(null)
   const fetchNext = useCallback(async (s: Session) => {
-    // Не просим вторую задачу, пока не пришла первая, — иначе они могли бы совпасть.
-    if (inFlight.current) return
-    inFlight.current = true
+    // Не просим вторую задачу для той же сессии, пока не пришла первая, — иначе они могли бы совпасть.
+    if (inFlight.current === s) return
+    inFlight.current = s
     setLoading(true)
     const seen = [...useProgress.getState().seen, ...s.tasks.map((t) => t.key!).filter(Boolean)]
     const reply = await generateTask(s.modules, s.level, seen)
-    inFlight.current = false
+    if (inFlight.current !== s) return
+    inFlight.current = null
     setLoading(false)
     if (!reply.task) {
       setExhausted(true)
@@ -126,6 +130,17 @@ export function Practice({ query }: { query: URLSearchParams }) {
     if (session.source === 'course' && nextPos >= session.tasks.length) setFinished(true)
   }
 
+  /** Сменить уровень прямо во время тренировки новых задач: текущая задача заменяется новой. */
+  const switchLevel = (l: Level) => {
+    if (!session || session.source !== 'new' || l === session.level) return
+    const s: Session = { ...session, level: l, tasks: session.tasks.slice(0, pos) }
+    setLevel(l)
+    setSession(s)
+    setAnswered(false)
+    setExhausted(false)
+    fetchNext(s)
+  }
+
   const toggle = (id: ModuleId) => setModules((ms) => (ms.includes(id) ? ms.filter((x) => x !== id) : [...ms, id]))
 
   // ——— Итоги ———
@@ -134,15 +149,19 @@ export function Practice({ query }: { query: URLSearchParams }) {
     const xp = results.reduce((s, r) => s + r.xp, 0)
     return (
       <Page className="max-w-3xl py-10">
-        <p className="eyebrow">Тренировка завершена</p>
-        <h1 className="h-display mt-2 text-3xl">
-          {clean} из {results.length} с первой попытки
+        <span className="relative inline-flex h-14 w-14 animate-pop-in items-center justify-center rounded-2xl bg-warn-soft text-warn">
+          <Trophy size={28} />
+          {clean > 0 && <Burst count={18} spread={80} />}
+        </span>
+        <p className="eyebrow mt-5">Тренировка завершена</p>
+        <h1 className="h-display mt-2 animate-fade-up text-3xl">
+          <CountUp value={clean} /> из {results.length} с первой попытки
         </h1>
-        <p className="mt-2 flex items-center gap-1.5 text-muted">
-          <Zap size={16} className="text-warn" fill="currentColor" /> Получено {xp} XP
+        <p className="mt-2 flex animate-fade-up items-center gap-1.5 text-muted" style={delay(1)}>
+          <Zap size={16} className="text-warn" fill="currentColor" /> Получено <CountUp value={xp} suffix=" XP" duration={1200} />
         </p>
         {results.length > 0 && (
-          <div className="card mt-6 divide-y divide-line">
+          <div className="card mt-6 divide-y divide-line overflow-hidden">
             {results.map((r, i) => {
               const row = (
                 <>
@@ -154,11 +173,11 @@ export function Practice({ query }: { query: URLSearchParams }) {
                 </>
               )
               return r.task.id.startsWith('g-') ? (
-                <div key={r.task.id} className="flex items-center gap-3 px-5 py-3.5">
+                <div key={r.task.id} className="flex animate-fade-up items-center gap-3 px-5 py-3.5" style={delay(i + 2, 50)}>
                   {row}
                 </div>
               ) : (
-                <Link key={r.task.id} to={`/task/${r.task.id}`} className="flex items-center gap-3 px-5 py-3.5 hover:bg-surface-2">
+                <Link key={r.task.id} to={`/task/${r.task.id}`} className="flex animate-fade-up items-center gap-3 px-5 py-3.5 transition hover:bg-surface-2" style={delay(i + 2, 50)}>
                   {row}
                 </Link>
               )
@@ -192,7 +211,31 @@ export function Practice({ query }: { query: URLSearchParams }) {
             {total ? `${pos + 1} / ${total}` : `Задача ${pos + 1}`}
           </span>
         </div>
-        {total ? <ProgressBar value={pos} max={total} className="mt-3" /> : <div className="mt-3 h-2 rounded-full bg-accent-soft" />}
+        {total ? (
+          <ProgressBar value={pos} max={total} className="mt-3" />
+        ) : (
+          <div className="mt-3 h-2 animate-shine rounded-full bg-gradient-to-r from-accent-soft via-accent/45 to-accent-soft bg-[length:200%_auto]" />
+        )}
+        {session.source === 'new' && (
+          <div className="mt-4 flex flex-wrap items-center gap-2" role="radiogroup" aria-label="Уровень новых задач">
+            <span className="text-sm font-semibold text-muted">Уровень:</span>
+            {LEVELS.map((l) => (
+              <button
+                key={l.id}
+                role="radio"
+                aria-checked={session.level === l.id}
+                title={l.name}
+                onClick={() => switchLevel(l.id)}
+                className={`inline-flex h-9 min-w-9 items-center justify-center gap-1.5 rounded-xl border px-2.5 text-sm font-bold transition active:scale-95 ${
+                  session.level === l.id ? `border-transparent ${l.bg} text-white` : 'border-line bg-surface text-muted hover:text-ink'
+                }`}
+              >
+                {l.id}
+                <span className="hidden sm:inline">{session.level === l.id ? `· ${l.name}` : ''}</span>
+              </button>
+            ))}
+          </div>
+        )}
 
         {task ? (
           <>
@@ -201,7 +244,7 @@ export function Practice({ query }: { query: URLSearchParams }) {
               <span className="chip">{MODULE_BY_ID[task.module].title}</span>
               {session.source === 'new' && <span className="chip text-accent">новая задача</span>}
             </div>
-            <div className="mt-4">
+            <div key={task.id} className="mt-4 animate-fade-up">
               <TaskCard
                 key={task.id}
                 task={task}
@@ -235,7 +278,7 @@ export function Practice({ query }: { query: URLSearchParams }) {
             )}
           </>
         ) : exhausted ? (
-          <div className="card mt-6 p-6 text-center">
+          <div className="card mt-6 animate-fade-up p-6 text-center">
             <p className="font-bold">Новые задачи этого типа закончились</p>
             <p className="mt-1 text-sm text-muted">
               Вы увидели все варианты, которые умеет создавать генератор для выбранных тем на уровне {session.level}. Выберите другой уровень или другие темы.
@@ -250,7 +293,7 @@ export function Practice({ query }: { query: URLSearchParams }) {
             </div>
           </div>
         ) : (
-          <div className="card mt-6 flex items-center justify-center gap-3 p-10 text-muted">
+          <div className="card mt-6 flex animate-fade-up items-center justify-center gap-3 p-10 text-muted">
             <Loader2 size={20} className="animate-spin text-accent" /> Создаём новую задачу…
           </div>
         )}
@@ -267,7 +310,7 @@ export function Practice({ query }: { query: URLSearchParams }) {
       <h1 className="h-display mt-2 text-2xl sm:text-3xl">Решайте сколько хотите</h1>
       <p className="mt-2 text-muted">Выберите уровень и темы. Опыт начисляется так же, как в курсе.</p>
 
-      <div className="mt-6 grid gap-3 sm:grid-cols-2" role="radiogroup" aria-label="Откуда брать задачи">
+      <div className="mt-6 grid animate-fade-up gap-3 sm:grid-cols-2" role="radiogroup" aria-label="Откуда брать задачи">
         {(
           [
             ['new', 'Новые задачи', 'Создаются прямо сейчас и никогда не повторяются — ни друг друга, ни задачи курса.', Sparkles],
@@ -282,9 +325,11 @@ export function Practice({ query }: { query: URLSearchParams }) {
               setSource(value)
               setCount(value === 'new' ? null : 10)
             }}
-            className={`card flex gap-3 p-4 text-left transition ${source === value ? 'border-accent ring-2 ring-accent/25' : 'hover:border-accent/40'}`}
+            className={`card group flex gap-3 p-4 text-left transition duration-300 hover:-translate-y-0.5 active:scale-[0.99] ${source === value ? 'border-accent ring-2 ring-accent/25' : 'hover:border-accent/40'}`}
           >
-            <span className={`inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${source === value ? 'bg-accent text-accent-ink' : 'bg-accent-soft text-accent'}`}>
+            <span
+              className={`inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl transition duration-300 group-hover:scale-110 ${source === value ? 'bg-accent text-accent-ink' : 'bg-accent-soft text-accent'}`}
+            >
               <Icon size={19} />
             </span>
             <span>
@@ -295,18 +340,18 @@ export function Practice({ query }: { query: URLSearchParams }) {
         ))}
       </div>
 
-      <section className="card mt-4 p-5 sm:p-6">
+      <section className="card mt-4 animate-fade-up p-5 sm:p-6" style={delay(1, 90)}>
         <h2 className="font-bold">Уровень</h2>
         <div className="mt-3 flex flex-wrap gap-2">
           {LEVELS.map((l) => (
             <button
               key={l.id}
               onClick={() => setLevel(l.id)}
-              className={`rounded-xl border px-3.5 py-2 text-sm font-bold transition ${
-                level === l.id ? 'border-accent bg-accent-soft text-accent' : 'border-line bg-surface text-muted hover:text-ink'
+              className={`rounded-xl border px-3.5 py-2 text-sm font-bold transition active:scale-95 ${
+                level === l.id ? 'border-accent bg-accent-soft text-accent' : 'border-line bg-surface text-muted hover:-translate-y-0.5 hover:text-ink'
               }`}
             >
-              <span className={`mr-1.5 inline-block h-2 w-2 rounded-full ${l.bg}`} />
+              <span className={`mr-1.5 inline-block h-2 w-2 rounded-full transition-transform duration-300 ${level === l.id ? 'scale-150' : ''} ${l.bg}`} />
               {l.id} · {l.name}
             </button>
           ))}
@@ -322,13 +367,13 @@ export function Practice({ query }: { query: URLSearchParams }) {
           {MODULES.map((m) => {
             const Icon = MODULE_ICONS[m.id]
             const on = modules.includes(m.id)
-            const open = isUnlocked(state, m.id, level)
+            const open = source === 'new' || isUnlocked(state, m.id, level)
             const handmade = source === 'new' && NO_GENERATOR.includes(m.id)
             return (
               <button
                 key={m.id}
                 onClick={() => toggle(m.id)}
-                className={`inline-flex items-center gap-2 rounded-xl border px-3 py-2 text-sm font-semibold transition ${
+                className={`inline-flex items-center gap-2 rounded-xl border px-3 py-2 text-sm font-semibold transition active:scale-95 ${
                   on ? 'border-accent bg-accent-soft text-ink' : 'border-line bg-surface text-muted'
                 } ${open && !handmade ? '' : 'opacity-50'}`}
                 title={!open ? 'Этот уровень темы ещё закрыт' : handmade ? 'Эти задачи написаны вручную и есть только в курсе' : undefined}
@@ -348,7 +393,7 @@ export function Practice({ query }: { query: URLSearchParams }) {
                 <button
                   key={String(n)}
                   onClick={() => setCount(n)}
-                  className={`inline-flex items-center rounded-xl border px-4 py-2 text-sm font-bold ${count === n ? 'border-accent bg-accent-soft text-accent' : 'border-line bg-surface text-muted'}`}
+                  className={`inline-flex items-center rounded-xl border px-4 py-2 text-sm font-bold transition active:scale-95 ${count === n ? 'border-accent bg-accent-soft text-accent' : 'border-line bg-surface text-muted'}`}
                   aria-label={n === null ? 'Без ограничения' : undefined}
                   title={n === null ? 'Без ограничения — решайте, пока не надоест' : undefined}
                 >
@@ -373,17 +418,21 @@ export function Practice({ query }: { query: URLSearchParams }) {
             {source === 'new'
               ? available.length
                 ? `Тем: ${available.length}. Уже показано новых задач: ${state.seen.length}.`
-                : 'Выбранные темы на этом уровне закрыты.'
+                : 'Выберите хотя бы одну тему.'
               : coursePool.length
                 ? `Доступно задач: ${coursePool.length}`
-                : 'Все задачи этого уровня уже решены — попробуйте «Новые задачи».'}
+                : usable('course').length
+                  ? 'Все задачи этого уровня уже решены — попробуйте «Новые задачи».'
+                  : 'Этот уровень в выбранных темах ещё закрыт — а в «Новых задачах» доступен сразу.'}
           </span>
         </div>
       </section>
 
-      <div className="mt-4 flex items-start gap-3 rounded-2xl bg-surface-2 p-4 text-sm text-muted">
-        <Lock size={18} className="mt-0.5 shrink-0 text-accent" />
-        Закрытые уровни открываются в курсе: решите половину задач предыдущего уровня темы или пройдите тест уровня.
+      <div key={source} className="mt-4 flex animate-fade-up items-start gap-3 rounded-2xl bg-surface-2 p-4 text-sm text-muted">
+        {source === 'new' ? <Sparkles size={18} className="mt-0.5 shrink-0 text-accent" /> : <Lock size={18} className="mt-0.5 shrink-0 text-accent" />}
+        {source === 'new'
+          ? 'Новые задачи доступны на любом уровне — выберите сложность сами. Сменить уровень можно и во время тренировки.'
+          : 'Закрытые уровни открываются в курсе: решите половину задач предыдущего уровня темы или пройдите тест уровня.'}
       </div>
     </Page>
   )

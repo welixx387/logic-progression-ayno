@@ -1,5 +1,6 @@
 import { ArrowLeft, BookOpen, Check, ChevronDown, Eye, Lock, Play, Sparkles } from 'lucide-react'
 import { useState } from 'react'
+import { delay } from '../components/Motion'
 import { TaskDisplay } from '../components/TaskDisplay'
 import { ModuleIcon, Page, ProgressBar } from '../components/ui'
 import { LEVELS, levelInfo } from '../content/levels'
@@ -30,7 +31,7 @@ function Theory({ m, defaultOpen }: { m: ModuleInfo; defaultOpen: boolean }) {
         <BookOpen size={20} className="text-accent" />
         <span className="font-bold">Теория и приёмы</span>
         <span className="ml-auto text-sm font-semibold text-muted">{open ? 'Свернуть' : 'Развернуть'}</span>
-        <ChevronDown size={18} className={`text-muted transition ${open ? 'rotate-180' : ''}`} />
+        <ChevronDown size={18} className={`text-muted transition duration-300 ${open ? 'rotate-180 text-accent' : ''}`} />
       </button>
       {open && (
         <div className="animate-rise border-t border-line px-5 pb-6 pt-5 sm:px-6">
@@ -109,8 +110,10 @@ export function ModulePage({ id, levelParam }: { id: string; levelParam: string 
         <ArrowLeft size={16} /> Все темы
       </Link>
       <div className="mt-4 flex flex-wrap items-start gap-4">
-        <ModuleIcon id={m.id} size="lg" />
-        <div className="min-w-0 flex-1">
+        <span className="animate-pop-in">
+          <ModuleIcon id={m.id} size="lg" />
+        </span>
+        <div className="min-w-0 flex-1 animate-fade-up" style={delay(1)}>
           <h1 className="h-display text-2xl sm:text-3xl">{m.title}</h1>
           <p className="mt-1.5 text-muted">{m.short}</p>
           <div className="mt-3 flex max-w-md items-center gap-3">
@@ -135,11 +138,11 @@ export function ModulePage({ id, levelParam }: { id: string; levelParam: string 
               role="tab"
               aria-selected={active}
               onClick={() => navigate(`/module/${m.id}?l=${l.id}`, true)}
-              className={`flex shrink-0 items-center gap-2 rounded-xl border px-3.5 py-2.5 text-sm font-bold transition ${
+              className={`flex shrink-0 items-center gap-2 rounded-xl border px-3.5 py-2.5 text-sm font-bold transition duration-200 active:scale-95 ${
                 active ? 'border-accent bg-accent-soft text-accent' : 'border-line bg-surface text-muted hover:text-ink'
               }`}
             >
-              {open ? <span className={`h-2 w-2 rounded-full ${l.bg}`} /> : <Lock size={14} />}
+              {open ? <span className={`h-2 w-2 rounded-full transition-transform duration-300 ${active ? 'scale-150' : ''} ${l.bg}`} /> : <Lock size={14} />}
               Уровень {l.id}
               <span className="text-xs font-semibold text-faint">
                 {solvedCount(state.records, count)}/{count.length}
@@ -149,7 +152,8 @@ export function ModulePage({ id, levelParam }: { id: string; levelParam: string 
         })}
       </div>
 
-      <div className="card mt-4 p-5 sm:p-6">
+      {/* Ключ по уровню: при смене уровня карточка появляется заново. */}
+      <div key={level} className="card mt-4 animate-fade-up p-5 sm:p-6">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <h2 className={`font-display text-lg font-semibold ${info.text}`}>
@@ -157,14 +161,14 @@ export function ModulePage({ id, levelParam }: { id: string; levelParam: string 
             </h2>
             <p className="mt-1 text-sm text-muted">{info.description}</p>
           </div>
-          {unlocked && (
+          {(unlocked || !NO_GENERATOR.includes(m.id)) && (
             <div className="flex flex-wrap gap-2">
               {!NO_GENERATOR.includes(m.id) && (
-                <Link to={`/practice?gen=1&m=${m.id}&l=${level}&start=1`} className="btn-ghost" title="Задачи создаются автоматически и не повторяются">
+                <Link to={`/practice?gen=1&m=${m.id}&l=${level}&start=1`} className="btn-ghost" title="Задачи создаются автоматически и не повторяются; доступны на любом уровне">
                   <Sparkles size={16} className="text-accent" /> Новые задачи
                 </Link>
               )}
-              {next && (
+              {unlocked && next && (
                 <Link to={`/task/${next.id}`} className="btn-primary">
                   <Play size={16} fill="currentColor" /> {solvedHere === 0 ? 'Начать' : solvedHere === list.length ? 'Повторить' : 'Продолжить'}
                 </Link>
@@ -182,7 +186,8 @@ export function ModulePage({ id, levelParam }: { id: string; levelParam: string 
                   <Link
                     key={t.id}
                     to={`/task/${t.id}`}
-                    className={`flex aspect-square items-center justify-center rounded-xl border text-sm font-bold transition hover:-translate-y-0.5 ${TILE[status]}`}
+                    style={delay(i, 14)}
+                    className={`flex aspect-square animate-pop-in items-center justify-center rounded-xl border text-sm font-bold transition hover:-translate-y-0.5 hover:scale-105 hover:shadow-card ${TILE[status]}`}
                     title={{ new: 'Не решена', tried: 'Есть ошибки', solved: 'Решена', perfect: 'Решена с первой попытки', revealed: 'Решение открыто' }[status]}
                   >
                     {i + 1}
@@ -208,7 +213,7 @@ export function ModulePage({ id, levelParam }: { id: string; levelParam: string 
         ) : (
           <div className="mt-5 flex flex-col items-start gap-4 rounded-xl bg-surface-2 p-5 sm:flex-row sm:items-center">
             <span className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-surface text-muted">
-              <Lock size={20} />
+              <Lock size={20} className="animate-shake" />
             </span>
             <div className="flex-1">
               <p className="font-bold">Уровень пока закрыт</p>

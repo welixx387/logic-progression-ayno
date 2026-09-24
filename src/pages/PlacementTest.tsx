@@ -1,5 +1,6 @@
 import { ArrowRight, Clock, Gauge, ListChecks, RotateCcw } from 'lucide-react'
 import { useEffect, useState } from 'react'
+import { Burst, delay } from '../components/Motion'
 import { TaskCard } from '../components/TaskCard'
 import { LevelBars, Page, ProgressBar } from '../components/ui'
 import { LEVELS, levelInfo } from '../content/levels'
@@ -63,16 +64,20 @@ export function PlacementTest() {
     const total = answers.filter(Boolean).length
     return (
       <Page className="max-w-3xl py-10">
-        <p className="eyebrow">Результат теста</p>
-        <h1 className="h-display mt-2 text-3xl">
+        <span className={`relative inline-flex h-16 w-16 animate-pop-in items-center justify-center rounded-2xl font-display text-3xl font-semibold text-white ${info.bg}`}>
+          {level}
+          <Burst count={18} spread={84} />
+        </span>
+        <p className="eyebrow mt-5">Результат теста</p>
+        <h1 className="h-display mt-2 animate-fade-up text-3xl">
           Ваш уровень: <span className={info.text}>{level} · {info.name}</span>
         </h1>
-        <p className="mt-3 text-muted">
+        <p className="mt-3 animate-fade-up text-muted" style={delay(1)}>
           Правильных ответов: {total} из {test.length}. {info.description}
         </p>
-        <div className="card mt-6 space-y-4 p-5 sm:p-6">
+        <div className="card mt-6 animate-fade-up space-y-4 p-5 sm:p-6" style={delay(2)}>
           {LEVELS.map((l, i) => (
-            <div key={l.id} className="flex items-center gap-4">
+            <div key={l.id} className="flex animate-fade-up items-center gap-4" style={delay(i + 3, 80)}>
               <span className={`flex w-40 shrink-0 items-center gap-2 text-sm font-bold ${l.text}`}>
                 <LevelBars level={l.id} /> {l.id}. {l.name}
               </span>
@@ -114,7 +119,7 @@ export function PlacementTest() {
           </span>
         </div>
         <ProgressBar value={i} max={test.length} className="mt-3" />
-        <div className="mt-5">
+        <div key={i} className="mt-5 animate-fade-up">
           <TaskCard key={`${i}-${task.id}`} task={task} mode="test" autoFocus onResult={({ correct }) => setAnswers((a) => [...a, correct])} />
         </div>
         <p className="mt-4 text-center text-xs text-faint">В тесте одна попытка на вопрос и нет подсказок. Разборы задач доступны в курсе.</p>
@@ -134,9 +139,9 @@ export function PlacementTest() {
           { icon: ListChecks, title: '15 задач', text: 'по 3 на каждый уровень' },
           { icon: Clock, title: '10–15 минут', text: 'без ограничения времени' },
           { icon: Gauge, title: 'Одна попытка', text: 'без подсказок и разборов' },
-        ].map(({ icon: Icon, title, text }) => (
-          <div key={title} className="card p-4">
-            <Icon size={20} className="text-accent" />
+        ].map(({ icon: Icon, title, text }, i) => (
+          <div key={title} className="card group animate-fade-up p-4 transition duration-300 hover:-translate-y-0.5 hover:shadow-lift" style={delay(i, 90)}>
+            <Icon size={20} className="text-accent transition duration-300 group-hover:scale-110" />
             <div className="mt-2 font-bold">{title}</div>
             <div className="text-sm text-muted">{text}</div>
           </div>
@@ -147,8 +152,8 @@ export function PlacementTest() {
           Вы уже проходили тест: уровень {placement.level} «{levelInfo(placement.level).name}». Можно пройти ещё раз — результат обновится.
         </p>
       )}
-      <button className="btn-primary mt-6 px-6 py-3 text-base" onClick={start}>
-        Начать тест <ArrowRight size={18} />
+      <button className="btn-primary group mt-6 px-6 py-3 text-base" onClick={start}>
+        Начать тест <ArrowRight size={18} className="transition group-hover:translate-x-1" />
       </button>
     </Page>
   )

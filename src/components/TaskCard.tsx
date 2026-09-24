@@ -1,8 +1,11 @@
 import { CircleCheck, CircleX, Eye, Lightbulb, Zap } from 'lucide-react'
 import { useEffect, useRef, useState, type ReactNode } from 'react'
+import { rankFor } from '../content/levels'
 import { isCorrect } from '../lib/answer'
 import { useProgress } from '../store/progress'
 import type { Task } from '../types'
+import { Burst, delay, useCountUp } from './Motion'
+import { announceRank } from './RankToast'
 import { TaskDisplay } from './TaskDisplay'
 
 const LETTERS = ['А', 'Б', 'В', 'Г', 'Д', 'Е']
@@ -52,7 +55,12 @@ export function TaskCard({ task, mode = 'course', onResult, after, autoFocus = f
       return
     }
     let xp = 0
-    if (mode === 'course') xp = attempt(task, correct).xp
+    if (mode === 'course') {
+      const before = rankFor(useProgress.getState().xp).index
+      xp = attempt(task, correct).xp
+      const after = rankFor(useProgress.getState().xp)
+      if (after.index > before) announceRank(after.current.name)
+    }
     if (correct) {
       setPhase('solved')
       setGained(xp)
@@ -101,7 +109,7 @@ export function TaskCard({ task, mode = 'course', onResult, after, autoFocus = f
   const optionClass = (opt: string) => {
     const selected = value === opt
     if (finished) {
-      if (opt === task.answer) return 'border-good bg-good-soft text-ink'
+      if (opt === task.answer) return `border-good bg-good-soft text-ink ${phase === 'solved' ? 'animate-glow' : ''}`
       return 'border-line bg-surface opacity-60'
     }
     if (selected && phase === 'wrong') return 'border-bad bg-bad-soft'
@@ -144,13 +152,17 @@ export function TaskCard({ task, mode = 'course', onResult, after, autoFocus = f
                     setValue(opt)
                     setPhase('answering')
                   }}
-                  className={`flex w-full items-start gap-3 rounded-xl border px-3.5 py-3 text-left text-[15px] font-medium transition ${optionClass(opt)}`}
+                  // Варианты появляются по очереди — но только в первый раз, не после ошибки.
+                  style={shake === 0 ? delay(i + 2, 55) : undefined}
+                  className={`flex w-full items-start gap-3 rounded-xl border px-3.5 py-3 text-left text-[15px] font-medium transition hover:-translate-y-px active:scale-[0.98] disabled:hover:translate-y-0 ${
+                    shake === 0 ? 'animate-fade-up' : ''
+                  } ${optionClass(opt)}`}
                 >
                   <span className="mt-px inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-surface-2 text-xs font-bold text-muted">
                     {LETTERS[i]}
                   </span>
                   <span className="min-w-0 break-words">{opt}</span>
-                  {finished && opt === task.answer && <CircleCheck size={18} className="ml-auto mt-0.5 shrink-0 text-good" />}
+                  {finished && opt === task.answer && <CircleCheck size={18} className="ml-auto mt-0.5 shrink-0 animate-pop-in text-good" />}
                 </button>
               ))}
             </div>
@@ -169,7 +181,7 @@ export function TaskCard({ task, mode = 'course', onResult, after, autoFocus = f
                 placeholder={task.kind === 'number' ? 'Ваш ответ — число' : 'Ваш ответ'}
                 aria-label="Ответ"
                 className={`min-w-0 flex-1 rounded-xl border bg-surface px-4 py-3 font-mono text-lg outline-none transition placeholder:font-sans placeholder:text-base placeholder:text-faint focus:border-accent focus:ring-2 focus:ring-accent/20 ${
-                  phase === 'wrong' ? 'border-bad' : finished ? 'border-good bg-good-soft' : 'border-line'
+                  phase === 'wrong' ? 'border-bad' : phase === 'solved' ? 'animate-glow border-good bg-good-soft' : finished ? 'border-good bg-good-soft' : 'border-line'
                 }`}
               />
             </div>
@@ -203,14 +215,14 @@ export function TaskCard({ task, mode = 'course', onResult, after, autoFocus = f
         </form>
 
         {phase === 'wrong' && (
-          <p className="mt-4 flex items-center gap-2 text-sm font-semibold text-bad" role="status">
+          <p key={wrongCount} className="mt-4 flex animate-rise items-center gap-2 text-sm font-semibold text-bad" role="status">
             <CircleX size={18} /> Не совсем. Попробуйте ещё раз{wrongCount > 1 ? ` (попыток: ${wrongCount})` : ''}.
           </p>
         )}
 
         {showHint && task.hint && !finished && (
-          <div className="mt-4 flex gap-3 rounded-xl border border-warn/30 bg-warn-soft px-4 py-3 text-sm leading-relaxed">
-            <Lightbulb size={18} className="mt-0.5 shrink-0 text-warn" />
+          <div className="mt-4 flex animate-fade-up gap-3 rounded-xl border border-warn/30 bg-warn-soft px-4 py-3 text-sm leading-relaxed">
+            <Lightbulb size={18} className="mt-0.5 shrink-0 animate-flicker text-warn" />
             <span>{task.hint}</span>
           </div>
         )}
@@ -221,19 +233,20 @@ export function TaskCard({ task, mode = 'course', onResult, after, autoFocus = f
           <div className="flex flex-wrap items-center gap-3">
             {phase === 'solved' ? (
               <p className="flex items-center gap-2 text-base font-bold text-good">
-                <CircleCheck size={20} /> {praise}
+                <span className="relative inline-flex">
+                  <CircleCheck size={20} className="animate-pop-in" />
+                  <Burst />
+                </span>
+                <span className="animate-pop-in" style={delay(1, 90)}>
+                  {praise}
+                </span>
               </p>
             ) : (
               <p className="text-base font-bold text-ink">
                 Ответ: <span className="text-accent">{task.answer}</span>
               </p>
             )}
-            {phase === 'solved' && mode === 'course' && gained !== null && (
-              <span className="inline-flex items-center gap-1 rounded-full bg-surface px-2.5 py-1 text-xs font-bold text-ink">
-                <Zap size={13} className="text-warn" fill="currentColor" />
-                {gained > 0 ? `+${gained} XP` : 'опыт уже получен'}
-              </span>
-            )}
+            {phase === 'solved' && mode === 'course' && gained !== null && <XpChip gained={gained} />}
           </div>
           {phase === 'solved' && gained !== null && gained > 0 && (wrongCount > 0 || showHint) && (
             <p className="mt-1 text-xs text-muted">Половина опыта — задача решена не с первой попытки или с подсказкой.</p>
@@ -241,10 +254,26 @@ export function TaskCard({ task, mode = 'course', onResult, after, autoFocus = f
           <button type="button" onClick={() => setShowSolution((v) => !v)} className="mt-3 text-sm font-semibold text-accent hover:underline">
             {showSolution ? 'Скрыть разбор' : 'Показать разбор'}
           </button>
-          {showSolution && <p className="mt-2 whitespace-pre-line text-[15px] leading-relaxed text-ink/90">{task.solution}</p>}
+          {showSolution && <p className="mt-2 animate-fade-up whitespace-pre-line text-[15px] leading-relaxed text-ink/90">{task.solution}</p>}
           {after && <div className="mt-5">{after}</div>}
         </div>
       )}
     </div>
+  )
+}
+
+/** Опыт за задачу: значок выскакивает, число дорастает, а «+XP» улетает вверх. */
+function XpChip({ gained }: { gained: number }) {
+  const n = useCountUp(gained, { duration: 700 })
+  return (
+    <span className="relative inline-flex animate-pop-in items-center gap-1 rounded-full bg-surface px-2.5 py-1 text-xs font-bold text-ink" style={delay(2, 90)}>
+      <Zap size={13} className="text-warn" fill="currentColor" />
+      {gained > 0 ? <span className="tabular-nums">+{n} XP</span> : 'опыт уже получен'}
+      {gained > 0 && (
+        <span className="pointer-events-none absolute left-1/2 top-0 -translate-x-1/2" aria-hidden="true">
+          <span className="block animate-xp-float whitespace-nowrap font-display text-base font-bold text-warn">+{gained} XP</span>
+        </span>
+      )}
+    </span>
   )
 }

@@ -85,7 +85,7 @@ body {
     @apply rounded-2xl border border-line bg-surface shadow-card;
   }
   .btn {
-    @apply inline-flex select-none items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold transition duration-150 disabled:cursor-not-allowed disabled:opacity-50;
+    @apply inline-flex select-none items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold transition duration-150 active:scale-[0.97] disabled:cursor-not-allowed disabled:opacity-50;
   }
   .btn-primary {
     @apply btn bg-accent text-accent-ink hover:brightness-110 active:brightness-95;
@@ -115,6 +115,8 @@ body {
   *::before,
   *::after {
     animation-duration: 0.001ms !important;
+    animation-delay: 0ms !important;
+    animation-iteration-count: 1 !important;
     transition-duration: 0.001ms !important;
   }
 }

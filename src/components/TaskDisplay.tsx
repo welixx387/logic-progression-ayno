@@ -1,4 +1,5 @@
 import type { TaskDisplay as Display } from '../types'
+import { delay } from './Motion'
 
 const isGap = (s: string) => s === '?' || s.endsWith('?')
 
@@ -10,8 +11,9 @@ export function TaskDisplay({ display }: { display: Display }) {
         {display.items.map((item, i) => (
           <span
             key={i}
+            style={delay(i, 70)}
             className={`inline-flex h-12 min-w-12 items-center justify-center rounded-xl px-3 font-mono text-lg font-semibold sm:h-14 sm:min-w-14 sm:text-xl ${
-              item === '?' ? 'border-2 border-dashed border-accent bg-accent-soft text-accent' : 'border border-line bg-surface-2 text-ink'
+              item === '?' ? 'animate-pop-pulse border-2 border-dashed border-accent bg-accent-soft text-accent' : 'animate-pop-in border border-line bg-surface-2 text-ink'
             }`}
           >
             {item}
@@ -26,8 +28,9 @@ export function TaskDisplay({ display }: { display: Display }) {
         {display.rows.flat().map((cell, i) => (
           <span
             key={i}
+            style={delay(i, 45)}
             className={`flex h-14 w-16 items-center justify-center rounded-xl font-mono text-lg font-semibold sm:h-16 sm:w-20 sm:text-xl ${
-              cell === '?' ? 'border-2 border-dashed border-accent bg-accent-soft text-accent' : 'border border-line bg-surface-2'
+              cell === '?' ? 'animate-pop-pulse border-2 border-dashed border-accent bg-accent-soft text-accent' : 'animate-pop-in border border-line bg-surface-2'
             }`}
           >
             {cell}
@@ -39,7 +42,7 @@ export function TaskDisplay({ display }: { display: Display }) {
   return (
     <div className="inline-flex flex-col gap-2 rounded-2xl border border-line bg-surface-2 px-5 py-4">
       {display.lines.map((line, i) => (
-        <span key={i} className={`font-mono text-lg font-semibold tracking-wide sm:text-xl ${isGap(line) ? 'text-accent' : 'text-ink'}`}>
+        <span key={i} style={delay(i, 90)} className={`animate-fade-up font-mono text-lg font-semibold tracking-wide sm:text-xl ${isGap(line) ? 'text-accent' : 'text-ink'}`}>
           {line}
         </span>
       ))}

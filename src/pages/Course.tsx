@@ -1,4 +1,5 @@
 import { ArrowRight, CalendarDays, Flame, Gauge, Play, Smartphone, Sparkles, Zap } from 'lucide-react'
+import { Cascade, CountUp, delay, riseOn, useAfterMount } from '../components/Motion'
 import { LevelBadge, ModuleIcon, Page, ProgressBar } from '../components/ui'
 import { LEVELS, rankFor } from '../content/levels'
 import { MODULE_BY_ID, MODULES } from '../content/modules'
@@ -20,6 +21,7 @@ export function Course() {
   const continueTask = last ? (records[last.id]?.solved || records[last.id]?.revealed ? nextTaskIn(state, last.module) : last) : nextTaskIn(state, 'sequences')
   const daily = dailyTask()
   const dailyDone = records[daily.id]?.solved
+  const ready = useAfterMount()
 
   return (
     <Page className="py-8 sm:py-10">
@@ -48,24 +50,28 @@ export function Course() {
       )}
 
       <div className="mt-6 grid gap-3 sm:grid-cols-3">
-        <div className="card p-4">
+        <div className="card animate-fade-up p-4">
           <div className="flex items-center gap-2 text-xs font-semibold text-muted">
             <Zap size={14} className="text-warn" fill="currentColor" /> Опыт
           </div>
-          <div className="mt-1.5 font-display text-2xl font-semibold">{xp} XP</div>
+          <div className="mt-1.5 font-display text-2xl font-semibold">
+            <CountUp value={xp} suffix=" XP" />
+          </div>
           <ProgressBar value={rank.progress * 100} max={100} className="mt-3" />
         </div>
-        <div className="card p-4">
+        <div className="card animate-fade-up p-4" style={delay(1)}>
           <div className="flex items-center gap-2 text-xs font-semibold text-muted">
-            <Flame size={14} className="text-bad" /> Серия дней
+            <Flame size={14} className={`text-bad ${streak.current > 0 ? 'animate-flicker' : ''}`} /> Серия дней
           </div>
-          <div className="mt-1.5 font-display text-2xl font-semibold">{streak.current}</div>
+          <div className="mt-1.5 font-display text-2xl font-semibold">
+            <CountUp value={streak.current} />
+          </div>
           <p className="mt-2 text-xs text-muted">Лучшая серия: {streak.best}</p>
         </div>
-        <div className="card p-4">
+        <div className="card animate-fade-up p-4" style={delay(2)}>
           <div className="flex items-center gap-2 text-xs font-semibold text-muted">Решено задач</div>
           <div className="mt-1.5 font-display text-2xl font-semibold">
-            {solved} <span className="text-base text-faint">/ {TASKS.length}</span>
+            <CountUp value={solved} /> <span className="text-base text-faint">/ {TASKS.length}</span>
           </div>
           <ProgressBar value={solved} max={TASKS.length} className="mt-3" color="bg-good" />
         </div>
@@ -73,8 +79,8 @@ export function Course() {
 
       <div className="mt-4 grid gap-3 lg:grid-cols-3">
         {!placement && (
-          <Link to="/test" className="card group flex min-w-0 items-center gap-4 p-5 transition hover:shadow-lift">
-            <span className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-accent text-accent-ink">
+          <Link to="/test" className="card group flex min-w-0 animate-fade-up items-center gap-4 p-5 transition duration-300 hover:-translate-y-0.5 hover:shadow-lift" style={delay(3)}>
+            <span className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl transition duration-300 group-hover:scale-110 bg-accent text-accent-ink">
               <Gauge size={21} />
             </span>
             <div className="min-w-0 flex-1">
@@ -85,8 +91,8 @@ export function Course() {
           </Link>
         )}
         {continueTask && (
-          <Link to={`/task/${continueTask.id}`} className="card group flex min-w-0 items-center gap-4 p-5 transition hover:shadow-lift">
-            <span className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-good-soft text-good">
+          <Link to={`/task/${continueTask.id}`} className="card group flex min-w-0 animate-fade-up items-center gap-4 p-5 transition duration-300 hover:-translate-y-0.5 hover:shadow-lift" style={delay(4)}>
+            <span className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl transition duration-300 group-hover:scale-110 bg-good-soft text-good">
               <Play size={20} fill="currentColor" />
             </span>
             <div className="min-w-0 flex-1">
@@ -98,8 +104,8 @@ export function Course() {
             <ArrowRight size={18} className="text-muted transition group-hover:translate-x-0.5" />
           </Link>
         )}
-        <Link to="/daily" className="card group flex min-w-0 items-center gap-4 p-5 transition hover:shadow-lift">
-          <span className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-warn-soft text-warn">
+        <Link to="/daily" className="card group flex min-w-0 animate-fade-up items-center gap-4 p-5 transition duration-300 hover:-translate-y-0.5 hover:shadow-lift" style={delay(5)}>
+          <span className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl transition duration-300 group-hover:scale-110 bg-warn-soft text-warn">
             <CalendarDays size={20} />
           </span>
           <div className="min-w-0 flex-1">
@@ -112,29 +118,37 @@ export function Course() {
         </Link>
       </div>
 
-      <Link
-        to="/practice?gen=1&start=1"
-        className="mt-3 flex flex-wrap items-center gap-4 rounded-2xl border border-accent/30 bg-accent-soft/60 p-5 transition hover:border-accent/60"
-      >
-        <span className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-accent text-accent-ink">
-          <Sparkles size={20} />
+      <div className="relative mt-3 flex animate-fade-up flex-wrap items-center gap-4 overflow-hidden rounded-2xl border border-accent/30 bg-accent-soft/60 p-5" style={delay(6)}>
+        <div className="pointer-events-none absolute -right-10 -top-16 h-40 w-40 animate-float rounded-full bg-accent/15 blur-2xl" />
+        <span className="relative inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-accent text-accent-ink">
+          <Sparkles size={20} className="animate-flicker" />
         </span>
-        <div className="min-w-0 flex-1">
+        <div className="relative min-w-0 flex-1 basis-60">
           <h2 className="font-bold">Новые задачи без конца</h2>
-          <p className="text-sm text-muted">Задачи создаются автоматически на вашем уровне и никогда не повторяются — ни друг друга, ни задачи курса.</p>
+          <p className="text-sm text-muted">Выберите уровень — задачи создаются автоматически и никогда не повторяются.</p>
         </div>
-        <span className="btn-primary">
-          Решать <ArrowRight size={16} />
-        </span>
-      </Link>
+        <div className="relative flex flex-wrap gap-2" aria-label="Уровень новых задач">
+          {LEVELS.map((l, i) => (
+            <Link
+              key={l.id}
+              to={`/practice?gen=1&l=${l.id}&start=1`}
+              title={`Уровень ${l.id} · ${l.name}`}
+              style={delay(i + 8, 70)}
+              className={`inline-flex h-11 w-11 animate-pop-in items-center justify-center rounded-xl font-display text-base font-semibold text-white transition hover:-translate-y-1 hover:scale-105 hover:shadow-lift active:scale-95 ${l.bg}`}
+            >
+              {l.id}
+            </Link>
+          ))}
+        </div>
+      </div>
 
       <h2 className="h-display mt-12 text-xl">Темы курса</h2>
-      <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-        {MODULES.map((m) => {
+      <Cascade className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+        {(shown) => MODULES.map((m, i) => {
           const all = tasksOf(m.id)
           const done = solvedCount(records, all)
           return (
-            <Link key={m.id} to={`/module/${m.id}`} className="card flex flex-col p-5 transition hover:-translate-y-0.5 hover:shadow-lift">
+            <Link key={m.id} to={`/module/${m.id}`} className={`card group flex flex-col p-5 transition duration-300 hover:-translate-y-1 hover:shadow-lift ${riseOn(shown)}`} style={delay(i, 45)}>
               <div className="flex items-start gap-3">
                 <ModuleIcon id={m.id} />
                 <div className="min-w-0 flex-1">
@@ -152,7 +166,7 @@ export function Course() {
                   return (
                     <div key={l.id} title={`Уровень ${l.id}: ${Math.round(pct * 100)}%${open ? '' : ' (закрыт)'}`}>
                       <div className={`h-1.5 overflow-hidden rounded-full ${open ? 'bg-surface-2' : 'bg-surface-2 opacity-40'}`}>
-                        <div className={`h-full rounded-full ${l.bg}`} style={{ width: `${pct * 100}%` }} />
+                        <div className={`h-full rounded-full transition-[width] duration-1000 ease-out ${l.bg}`} style={{ width: `${ready && shown ? pct * 100 : 0}%`, transitionDelay: `${i * 45 + l.id * 60}ms` }} />
                       </div>
                       <div className={`mt-1 text-center text-[10px] font-bold ${open ? l.text : 'text-faint'}`}>{l.id}</div>
                     </div>
@@ -162,7 +176,7 @@ export function Course() {
             </Link>
           )
         })}
-      </div>
+      </Cascade>
     </Page>
   )
 }

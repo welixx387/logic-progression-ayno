@@ -1,9 +1,11 @@
 import { ChartColumn, CloudOff, Dumbbell, Gauge, GraduationCap, LogIn, Moon, Sun, Zap } from 'lucide-react'
+import { useState } from 'react'
 import { Link } from '../lib/router'
 import { isCloudConfigured } from '../lib/supabase'
 import { displayName, useAuth } from '../store/auth'
 import { useProgress } from '../store/progress'
 import { Logo } from './Logo'
+import { useCountUp } from './Motion'
 
 export const NAV = [
   { to: '/course', label: 'Курс', icon: GraduationCap },
@@ -29,7 +31,7 @@ export function Header({ path, theme }: { path: string; theme: 'light' | 'dark' 
             <Link
               key={item.to}
               to={item.to}
-              className={`rounded-lg px-3 py-2 text-sm font-semibold transition ${
+              className={`rounded-lg px-3 py-2 text-sm font-semibold transition duration-200 ${
                 isActive(path, item.to) ? 'bg-accent-soft text-accent' : 'text-muted hover:bg-surface-2 hover:text-ink'
               }`}
             >
@@ -39,8 +41,8 @@ export function Header({ path, theme }: { path: string; theme: 'light' | 'dark' 
         </nav>
         <div className="ml-auto flex shrink-0 items-center gap-2">
           <Link to="/progress" className="hidden items-center gap-1.5 rounded-full border border-line bg-surface px-3 py-1.5 text-xs font-bold text-ink sm:inline-flex" title="Опыт">
-            <Zap size={14} className="text-warn" fill="currentColor" />
-            {xp} XP
+            <Zap key={xp} size={14} className="animate-pop-in text-warn" fill="currentColor" />
+            <XpCount xp={xp} /> XP
           </Link>
           <AccountButton />
           <button
@@ -56,6 +58,12 @@ export function Header({ path, theme }: { path: string; theme: 'light' | 'dark' 
       </div>
     </header>
   )
+}
+
+/** Опыт в шапке: при новом решении число плавно дорастает до нового значения. */
+function XpCount({ xp }: { xp: number }) {
+  const [from] = useState(xp)
+  return <span className="tabular-nums">{useCountUp(xp, { from, duration: 700 })}</span>
 }
 
 /** Кнопка аккаунта: «Войти» или буква имени; с ошибкой синхронизации — значок. */
@@ -92,8 +100,9 @@ export function MobileNav({ path }: { path: string }) {
         {NAV.map(({ to, label, icon: Icon }) => {
           const active = isActive(path, to)
           return (
-            <Link key={to} to={to} className={`flex flex-col items-center gap-1 py-2.5 text-[11px] font-semibold ${active ? 'text-accent' : 'text-muted'}`}>
-              <Icon size={20} strokeWidth={active ? 2.4 : 2} />
+            <Link key={to} to={to} className={`relative flex flex-col items-center gap-1 py-2.5 text-[11px] font-semibold transition-colors ${active ? 'text-accent' : 'text-muted'}`}>
+              <span className={`absolute top-0 h-0.5 rounded-full bg-accent transition-all duration-300 ${active ? 'w-8 opacity-100' : 'w-0 opacity-0'}`} />
+              <Icon size={20} strokeWidth={active ? 2.4 : 2} className={`transition-transform duration-300 ${active ? '-translate-y-0.5 scale-110' : ''}`} />
               {label}
             </Link>
           )

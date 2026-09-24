@@ -1,5 +1,6 @@
 import { Award, Download, Flame, Lock, Monitor, Moon, RotateCcw, Sun, Target, Trophy, Upload, Zap } from 'lucide-react'
 import { useRef, useState } from 'react'
+import { Cascade, CountUp, delay, riseOn } from '../components/Motion'
 import { ModuleIcon, Page, ProgressBar, Stat } from '../components/ui'
 import { LEVELS, RANKS, rankFor } from '../content/levels'
 import { MODULES } from '../content/modules'
@@ -30,11 +31,19 @@ function Heatmap({ days }: { days: Record<string, number> }) {
         ))}
       </div>
       <div className="grid grid-flow-col grid-rows-7 gap-1">
-        {cells.map((d) => {
+        {cells.map((d, i) => {
           const key = dayKey(d)
           const n = days[key] ?? 0
           const future = d > today
-          return <span key={key} title={`${d.toLocaleDateString('ru-RU')}: ${n} задач`} className={`h-3.5 w-3.5 rounded-[4px] ${future ? 'opacity-0' : tone(n)}`} />
+          // Клетки проявляются неделя за неделей, слева направо.
+          return (
+            <span
+              key={key}
+              title={`${d.toLocaleDateString('ru-RU')}: ${n} задач`}
+              className={`h-3.5 w-3.5 rounded-[4px] ${future ? 'opacity-0' : `animate-pop-in transition hover:scale-125 ${tone(n)}`}`}
+              style={future ? undefined : delay(Math.floor(i / 7) + (i % 7) / 3, 35)}
+            />
+          )
         })}
       </div>
     </div>
@@ -89,15 +98,20 @@ export function Progress() {
       {rank.next && <p className="mt-1.5 text-sm text-muted">Следующий ранг — «{rank.next.name}»</p>}
 
       <div className="mt-6 grid grid-cols-2 gap-3 lg:grid-cols-4">
-        <Stat label="Опыт" value={`${xp} XP`} icon={<Zap size={14} className="text-warn" fill="currentColor" />} hint={`Ранг ${rank.index + 1} из ${RANKS.length}`} />
+        <Stat label="Опыт" value={<CountUp value={xp} suffix=" XP" />} icon={<Zap size={14} className="text-warn" fill="currentColor" />} hint={`Ранг ${rank.index + 1} из ${RANKS.length}`} />
         <Stat
           label="Решено задач"
-          value={`${solved + generatedSolved}`}
+          value={<CountUp value={solved + generatedSolved} />}
           icon={<Target size={14} className="text-good" />}
           hint={generatedSolved ? `${solved} из ${TASKS.length} в курсе + ${generatedSolved} новых` : `из ${TASKS.length} в курсе`}
         />
-        <Stat label="С первой попытки" value={`${accuracy}%`} icon={<Award size={14} className="text-accent" />} hint={`лучшая серия: ${bestRun} подряд`} />
-        <Stat label="Серия дней" value={`${streak.current}`} icon={<Flame size={14} className="text-bad" />} hint={`рекорд: ${streak.best}`} />
+        <Stat label="С первой попытки" value={<CountUp value={accuracy} suffix="%" />} icon={<Award size={14} className="text-accent" />} hint={`лучшая серия: ${bestRun} подряд`} />
+        <Stat
+          label="Серия дней"
+          value={<CountUp value={streak.current} />}
+          icon={<Flame size={14} className={`text-bad ${streak.current > 0 ? 'animate-flicker' : ''}`} />}
+          hint={`рекорд: ${streak.best}`}
+        />
       </div>
 
       <section className="card mt-4 p-5 sm:p-6">
@@ -137,7 +151,7 @@ export function Progress() {
               const list = tasksOf(m.id)
               const done = solvedCount(records, list)
               return (
-                <Link key={m.id} to={`/module/${m.id}`} className="flex items-center gap-3 rounded-lg hover:bg-surface-2">
+                <Link key={m.id} to={`/module/${m.id}`} className="group flex items-center gap-3 rounded-lg transition hover:bg-surface-2">
                   <ModuleIcon id={m.id} size="sm" />
                   <span className="w-40 shrink-0 truncate text-sm font-semibold sm:w-48">{m.title}</span>
                   <ProgressBar value={done} max={list.length} className="flex-1" color="bg-good" />
@@ -155,17 +169,21 @@ export function Progress() {
         <h2 className="flex items-center gap-2 font-bold">
           <Trophy size={18} className="text-warn" /> Достижения · {achs.filter((a) => a.done).length} из {achs.length}
         </h2>
-        <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
-          {achs.map((a) => (
-            <div key={a.id} className={`rounded-xl border p-4 ${a.done ? 'border-warn/40 bg-warn-soft' : 'border-line bg-surface-2 opacity-70'}`}>
+        <Cascade className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+          {(shown) => achs.map((a, i) => (
+            <div
+              key={a.id}
+              style={delay(i, 50)}
+              className={`rounded-xl border p-4 transition duration-300 hover:-translate-y-0.5 ${riseOn(shown)} ${a.done ? 'border-warn/40 bg-warn-soft hover:shadow-lift' : 'border-line bg-surface-2 [&>*]:opacity-70'}`}
+            >
               <div className="flex items-center gap-2">
-                {a.done ? <Trophy size={16} className="text-warn" /> : <Lock size={14} className="text-faint" />}
+                {a.done ? <Trophy size={16} className={`text-warn ${shown ? 'animate-pop-in' : ''}`} style={delay(i + 3, 50)} /> : <Lock size={14} className="text-faint" />}
                 <span className="text-sm font-bold">{a.title}</span>
               </div>
               <p className="mt-1 text-xs text-muted">{a.description}</p>
             </div>
           ))}
-        </div>
+        </Cascade>
       </section>
 
       <section className="card mt-4 p-5 sm:p-6">
