@@ -20,6 +20,8 @@ import { MEMORY_NUMBER_GENERATORS } from './memory-numbers.ts'
 import { MEMORY_SCENE_GENERATORS } from './memory-scenes.ts'
 import { MEMORY_WORD_GENERATORS } from './memory-words.ts'
 import { EMOTIONAL_SELF_GENERATORS } from './emotional-self.ts'
+import { ACADEMIC_ARTS_GENERATORS } from './academic-arts.ts'
+import { ACADEMIC_SCI_GENERATORS } from './academic-sci.ts'
 import { EMOTIONAL_SOCIAL_GENERATORS } from './emotional-social.ts'
 import { STRATEGY_CHOICE_GENERATORS } from './strategy-choice.ts'
 import { STRATEGY_GAME_GENERATORS } from './strategy-games.ts'
@@ -104,6 +106,8 @@ export const LISTED_GENERATORS: ModuleGenerator[] = [
   ...STRATEGY_GAME_GENERATORS,
   ...EMOTIONAL_SELF_GENERATORS,
   ...EMOTIONAL_SOCIAL_GENERATORS,
+  ...ACADEMIC_SCI_GENERATORS,
+  ...ACADEMIC_ARTS_GENERATORS,
   ...MEMORY_NUMBER_GENERATORS,
   ...MEMORY_WORD_GENERATORS,
   ...MEMORY_SCENE_GENERATORS,

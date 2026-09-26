@@ -146,6 +146,16 @@ export type ModuleId =
   | 'social'
   | 'geography'
   | 'safety'
+  | 'probstat'
+  | 'astronomy'
+  | 'ecology'
+  | 'finance'
+  | 'pe'
+  | 'german'
+  | 'french'
+  | 'technology'
+  | 'music'
+  | 'art'
 
 /** Как отвечать: выбрать вариант, ввести число или ввести текст. */
 export type TaskKind = 'choice' | 'number' | 'text'

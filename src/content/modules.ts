@@ -1,5 +1,6 @@
 import type { CategoryId, ModuleId, TaskDisplay } from '../types'
 import { ACADEMIC_MODULES } from './modules-academic'
+import { ACADEMIC_EXTRA } from './modules-academic-extra'
 import { ANALYTICS_EXTRA } from './modules-analytics-extra'
 import { LOGIC_EXTRA } from './modules-logic-extra'
 import { MEMORY_MODULES } from './modules-memory'
@@ -410,6 +411,7 @@ export const MODULES: ModuleInfo[] = [
   ...EMOTIONAL_EXTRA,
   ...MEMORY_MODULES,
   ...ACADEMIC_MODULES,
+  ...ACADEMIC_EXTRA,
 ]
 
 export const MODULE_BY_ID = Object.fromEntries(MODULES.map((m) => [m.id, m])) as Record<ModuleId, ModuleInfo>
