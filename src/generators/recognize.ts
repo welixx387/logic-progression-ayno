@@ -21,16 +21,16 @@ interface Person {
 const PEOPLE: Person[] = [
   { n: 'Артём', g: 'Артёма', d: 'Артёму', a: 'Артёма', female: false },
   { n: 'Максим', g: 'Максима', d: 'Максиму', a: 'Максима', female: false },
-  { n: 'Никита', g: 'Никиты', d: 'Никите', a: 'Никиты', female: false },
-  { n: 'Илья', g: 'Ильи', d: 'Илье', a: 'Ильи', female: false },
+  { n: 'Никита', g: 'Никиты', d: 'Никите', a: 'Никиту', female: false },
+  { n: 'Илья', g: 'Ильи', d: 'Илье', a: 'Илью', female: false },
   { n: 'Денис', g: 'Дениса', d: 'Денису', a: 'Дениса', female: false },
   { n: 'Тимур', g: 'Тимура', d: 'Тимуру', a: 'Тимура', female: false },
   { n: 'Аня', g: 'Ани', d: 'Ане', a: 'Аню', female: true },
-  { n: 'Маша', g: 'Маши', d: 'Маше', a: 'Машю', female: true },
-  { n: 'Лиза', g: 'Лизы', d: 'Лизе', a: 'Лизю', female: true },
-  { n: 'Вика', g: 'Вики', d: 'Вике', a: 'Викю', female: true },
+  { n: 'Маша', g: 'Маши', d: 'Маше', a: 'Машу', female: true },
+  { n: 'Лиза', g: 'Лизы', d: 'Лизе', a: 'Лизу', female: true },
+  { n: 'Вика', g: 'Вики', d: 'Вике', a: 'Вику', female: true },
   { n: 'Катя', g: 'Кати', d: 'Кате', a: 'Катю', female: true },
-  { n: 'Полина', g: 'Полины', d: 'Полине', a: 'Полиню', female: true },
+  { n: 'Полина', g: 'Полины', d: 'Полине', a: 'Полину', female: true },
 ]
 
 function fill(text: string, p: Person): string {

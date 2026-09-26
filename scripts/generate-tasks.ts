@@ -3,6 +3,8 @@
  * Запуск: npm run tasks
  */
 import { writeFileSync } from 'node:fs'
+import { LISTED_GENERATORS } from '../src/generators/index.ts'
+import { collect } from '../src/generators/util.ts'
 import type { Task } from '../src/types.ts'
 import { sequences } from '../src/generators/sequences.ts'
 import { letters } from '../src/generators/letters.ts'
@@ -82,6 +84,7 @@ const generators: [string, () => Task[]][] = [
   ['social', social],
   ['geography', geography],
   ['safety', safety],
+  ...LISTED_GENERATORS.map((g): [string, () => Task[]] => [g.module, () => collect(g)]),
 ]
 
 const only = process.argv[2]

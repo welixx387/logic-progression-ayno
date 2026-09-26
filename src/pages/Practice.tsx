@@ -257,6 +257,7 @@ export function Practice({ query, category }: { query: URLSearchParams; category
                 key={task.id}
                 task={task}
                 autoFocus
+                similar={false}
                 onResult={({ correct, xp }) => {
                   const rec = useProgress.getState().records[task.id]
                   setResults((rs) => [...rs, { task, correct, clean: correct && !!rec?.firstTry && xp > 0, xp }])

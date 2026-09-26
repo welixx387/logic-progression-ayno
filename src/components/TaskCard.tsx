@@ -1,9 +1,10 @@
-import { CircleCheck, CircleX, Eye, Lightbulb, Zap } from 'lucide-react'
-import { useEffect, useRef, useState, type ReactNode } from 'react'
+import { Brain, CircleCheck, CircleX, EyeOff, Eye, Lightbulb, Zap } from 'lucide-react'
+import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react'
 import { rankFor } from '../content/levels'
 import { isCorrect } from '../lib/answer'
 import { useProgress } from '../store/progress'
 import type { Task } from '../types'
+import { Explanation } from './Explanation'
 import { Burst, delay, useCountUp } from './Motion'
 import { announceRank } from './RankToast'
 import { TaskDisplay } from './TaskDisplay'
@@ -21,9 +22,39 @@ interface Props {
   /** Что показать после решения (например, кнопку «Дальше»). */
   after?: ReactNode
   autoFocus?: boolean
+  /** Показывать в разборе ссылки «Похожая задача» и «Теория темы». */
+  similar?: boolean
 }
 
-export function TaskCard({ task, mode = 'course', onResult, after, autoFocus = false }: Props) {
+/** Полоса обратного отсчёта для заданий на память. */
+function Countdown({ seconds, onDone }: { seconds: number; onDone: () => void }) {
+  const [left, setLeft] = useState(seconds)
+  useEffect(() => {
+    const started = Date.now()
+    const timer = window.setInterval(() => {
+      const rest = Math.max(0, seconds - Math.floor((Date.now() - started) / 1000))
+      setLeft(rest)
+      if (rest === 0) {
+        window.clearInterval(timer)
+        onDone()
+      }
+    }, 250)
+    return () => window.clearInterval(timer)
+  }, [seconds, onDone])
+  return (
+    <div className="mt-5">
+      <div className="flex items-center justify-between text-xs font-bold text-muted">
+        <span>Осталось</span>
+        <span className="tabular-nums">{left} с</span>
+      </div>
+      <div className="mt-1.5 h-2 overflow-hidden rounded-full bg-surface-2">
+        <div className="h-full rounded-full bg-accent" style={{ animation: `shrink ${seconds}s linear forwards` }} />
+      </div>
+    </div>
+  )
+}
+
+export function TaskCard({ task, mode = 'course', onResult, after, autoFocus = false, similar = true }: Props) {
   const record = useProgress((s) => s.records[task.id])
   const attempt = useProgress((s) => s.attempt)
   const markHint = useProgress((s) => s.markHint)
@@ -39,13 +70,17 @@ export function TaskCard({ task, mode = 'course', onResult, after, autoFocus = f
   const [shake, setShake] = useState(0)
   const inputRef = useRef<HTMLInputElement>(null)
   const formRef = useRef<HTMLFormElement>(null)
+  // Задание на память: сначала материал, потом — вопрос по памяти.
+  const memo = task.display?.type === 'memorize' ? task.display : null
+  const [memorizing, setMemorizing] = useState(!!memo)
+  const stopMemorizing = useCallback(() => setMemorizing(false), [])
 
   const finished = phase === 'solved' || phase === 'revealed'
   const praise = PRAISE[task.id.length % PRAISE.length]
 
   useEffect(() => {
-    if (autoFocus && task.kind !== 'choice') inputRef.current?.focus()
-  }, [autoFocus, task.kind])
+    if (autoFocus && task.kind !== 'choice' && !memorizing) inputRef.current?.focus()
+  }, [autoFocus, task.kind, memorizing])
 
   const check = () => {
     if (finished || !value.trim()) return
@@ -88,7 +123,7 @@ export function TaskCard({ task, mode = 'course', onResult, after, autoFocus = f
 
   // Клавиши 1–6 выбирают вариант, Enter — проверяет.
   useEffect(() => {
-    if (task.kind !== 'choice' || finished) return
+    if (task.kind !== 'choice' || finished || memorizing) return
     const onKey = (e: KeyboardEvent) => {
       const target = e.target as HTMLElement
       if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA') return
@@ -104,7 +139,7 @@ export function TaskCard({ task, mode = 'course', onResult, after, autoFocus = f
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [task, finished])
+  }, [task, finished, memorizing])
 
   const optionClass = (opt: string) => {
     const selected = value === opt
@@ -117,11 +152,39 @@ export function TaskCard({ task, mode = 'course', onResult, after, autoFocus = f
     return 'border-line bg-surface hover:border-accent/50 hover:bg-surface-2'
   }
 
+  if (memo && memorizing) {
+    return (
+      <div className="card overflow-hidden">
+        <div className="p-5 sm:p-7">
+          <p className="eyebrow flex items-center gap-1.5">
+            <Brain size={14} /> Запомните
+          </p>
+          <p className="mt-2 text-[16.5px] leading-relaxed text-ink sm:text-[17px]">{memo.title}</p>
+          <div className="mt-5 overflow-x-auto pb-1">
+            <TaskDisplay display={memo.content} />
+          </div>
+          <Countdown seconds={memo.seconds} onDone={stopMemorizing} />
+          <div className="mt-5 flex flex-wrap items-center gap-3">
+            <button type="button" className="btn-primary" onClick={stopMemorizing}>
+              Запомнил — к вопросу
+            </button>
+            <span className="text-sm text-muted">Потом материал скроется, и вопрос нужно будет решить по памяти.</span>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="card overflow-hidden">
       <div className="p-5 sm:p-7">
+        {memo && !finished && (
+          <p className="mb-3 inline-flex items-center gap-1.5 rounded-full bg-surface-2 px-3 py-1 text-xs font-semibold text-muted">
+            <EyeOff size={13} /> Материал скрыт — отвечайте по памяти
+          </p>
+        )}
         <p className="whitespace-pre-line text-[16.5px] leading-relaxed text-ink sm:text-[17px]">{task.prompt}</p>
-        {task.display && (
+        {task.display && !memo && (
           <div className="mt-5 overflow-x-auto pb-1">
             <TaskDisplay display={task.display} />
           </div>
@@ -203,11 +266,9 @@ export function TaskCard({ task, mode = 'course', onResult, after, autoFocus = f
                       <Lightbulb size={16} /> Подсказка
                     </button>
                   )}
-                  {(wrongCount > 0 || showHint || alreadyDone) && (
-                    <button type="button" className="btn-quiet" onClick={giveUp}>
-                      <Eye size={16} /> Показать решение
-                    </button>
-                  )}
+                  <button type="button" className="btn-quiet" onClick={giveUp}>
+                    <Eye size={16} /> Показать ответ
+                  </button>
                 </>
               )}
             </div>
@@ -252,9 +313,9 @@ export function TaskCard({ task, mode = 'course', onResult, after, autoFocus = f
             <p className="mt-1 text-xs text-muted">Половина опыта — задача решена не с первой попытки или с подсказкой.</p>
           )}
           <button type="button" onClick={() => setShowSolution((v) => !v)} className="mt-3 text-sm font-semibold text-accent hover:underline">
-            {showSolution ? 'Скрыть разбор' : 'Показать разбор'}
+            {showSolution ? 'Скрыть подробный разбор' : 'Показать подробный разбор'}
           </button>
-          {showSolution && <p className="mt-2 animate-fade-up whitespace-pre-line text-[15px] leading-relaxed text-ink/90">{task.solution}</p>}
+          {showSolution && <Explanation task={task} similar={similar && mode === 'course'} />}
           {after && <div className="mt-5">{after}</div>}
         </div>
       )}

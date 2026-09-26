@@ -11,6 +11,10 @@ export interface Draft {
   accept?: string[]
   hint?: string
   solution: string
+  /** Пояснения к вариантам ответа. */
+  notes?: Record<string, string>
+  /** Номер раздела теории темы, который объясняет задачу. */
+  ref?: number
   /** Ключ для отсева повторов внутри модуля. */
   key: string
 }

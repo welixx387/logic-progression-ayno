@@ -1,5 +1,6 @@
 import type { CategoryId, ModuleId, TaskDisplay } from '../types'
 import { ACADEMIC_MODULES } from './modules-academic'
+import { MEMORY_MODULES } from './modules-memory'
 import { ANALYTICS_MODULES } from './modules-analytics'
 import { EMOTIONAL_MODULES } from './modules-emotional'
 import { STRATEGY_MODULES } from './modules-strategy'
@@ -24,6 +25,11 @@ export interface ModuleInfo {
   alphabet?: boolean
   /** Не брать в тест уровня (слишком длинные задачи). */
   noTest?: boolean
+  /**
+   * Словарь понятий темы: если вариант ответа совпадает с понятием,
+   * в подробном разборе показывается его определение.
+   */
+  glossary?: Record<string, string>
 }
 
 /** Логическое мышление — исходные 13 тем курса. */
@@ -394,6 +400,7 @@ export const MODULES: ModuleInfo[] = [
   ...STRATEGY_MODULES,
   ...ANALYTICS_MODULES,
   ...EMOTIONAL_MODULES,
+  ...MEMORY_MODULES,
   ...ACADEMIC_MODULES,
 ]
 

@@ -66,6 +66,18 @@ export const CATEGORIES: CategoryInfo[] = [
     tones: ['bg-cat-emotional/30', 'bg-cat-emotional/60', 'bg-cat-emotional'],
   },
   {
+    id: 'memory',
+    title: 'Память',
+    tab: 'Память',
+    short: 'Запоминать числа, слова, лица, маршруты и детали.',
+    description: 'Числа и слова, пары и имена, таблицы и маршруты, тексты и детали: материал показывается на время, потом скрывается — и нужно ответить по памяти. Плюс приёмы запоминания.',
+    text: 'text-cat-memory',
+    bg: 'bg-cat-memory',
+    soft: 'bg-cat-memory/10',
+    border: 'border-cat-memory/40',
+    tones: ['bg-cat-memory/30', 'bg-cat-memory/60', 'bg-cat-memory'],
+  },
+  {
     id: 'academic',
     title: 'Академические способности',
     tab: 'Школа',

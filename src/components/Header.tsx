@@ -46,17 +46,18 @@ export function Header({ path, theme }: { path: string; theme: 'light' | 'dark' 
   const setTheme = useProgress((s) => s.setTheme)
   return (
     <header className="sticky top-0 z-30 border-b border-line/70 bg-bg/80 pt-[env(safe-area-inset-top)] backdrop-blur-md">
-      <div className="mx-auto flex h-16 max-w-6xl items-center gap-4 px-4 sm:px-6">
+      <div className="mx-auto flex h-16 max-w-6xl items-center gap-3 px-4 sm:px-6">
         <Link to="/" className="min-w-0 rounded-lg" aria-label="На главную">
           <Logo />
         </Link>
         {/* Шесть пунктов: без иконок, чтобы логотип помещался целиком (иконки — в нижнем меню на телефоне). */}
-        <nav className="ml-2 hidden items-center gap-0.5 lg:flex xl:ml-4 xl:gap-1" aria-label="Основная навигация">
+        <nav className="ml-1 hidden items-center gap-0.5 lg:flex xl:ml-2" aria-label="Основная навигация">
           {NAV.map((item) => (
             <Link
               key={item.to}
               to={item.to}
-              className={`inline-flex items-center rounded-lg px-2 py-2 text-sm font-semibold transition duration-200 xl:px-2.5 ${
+              // На ширине 1024–1279 «Прогресс» открывается кнопкой опыта справа — так помещаются все направления.
+              className={`items-center rounded-lg px-2 py-2 text-sm font-semibold transition duration-200 ${item.category ? 'inline-flex' : 'hidden xl:inline-flex'} ${
                 isActive(path, item) ? activeClass(item) : 'text-muted hover:bg-surface-2 hover:text-ink'
               }`}
             >
@@ -65,7 +66,7 @@ export function Header({ path, theme }: { path: string; theme: 'light' | 'dark' 
           ))}
         </nav>
         <div className="ml-auto flex shrink-0 items-center gap-2">
-          <Link to="/progress" className="hidden items-center gap-1.5 rounded-full border border-line bg-surface px-3 py-1.5 text-xs font-bold text-ink sm:inline-flex lg:hidden xl:inline-flex" title="Опыт">
+          <Link to="/progress" className="hidden items-center gap-1.5 rounded-full border border-line bg-surface px-3 py-1.5 text-xs font-bold text-ink sm:inline-flex" title="Опыт и прогресс">
             <Zap key={xp} size={14} className="animate-pop-in text-warn" fill="currentColor" />
             <XpCount xp={xp} /> XP
           </Link>
@@ -120,12 +121,12 @@ export function MobileNav({ path }: { path: string }) {
       className="fixed inset-x-0 bottom-0 z-30 border-t border-line bg-surface/95 pb-[env(safe-area-inset-bottom)] backdrop-blur-md lg:hidden"
       aria-label="Навигация"
     >
-      <div className="grid grid-cols-6">
+      <div className="grid grid-cols-7">
         {NAV.map((item) => {
           const { to, label, icon: Icon } = item
           const active = isActive(path, item)
           return (
-            <Link key={to} to={to} className={`relative flex min-w-0 flex-col items-center gap-1 py-2.5 text-[10px] font-semibold transition-colors min-[400px]:text-[11px] ${active ? activeText(item) : 'text-muted'}`}>
+            <Link key={to} to={to} className={`relative flex min-w-0 flex-col items-center gap-1 py-2.5 text-[9.5px] font-semibold transition-colors min-[400px]:text-[10.5px] sm:text-[11px] ${active ? activeText(item) : 'text-muted'}`}>
               <span className={`absolute top-0 h-0.5 rounded-full bg-current transition-all duration-300 ${active ? 'w-8 opacity-100' : 'w-0 opacity-0'}`} />
               <Icon size={20} strokeWidth={active ? 2.4 : 2} className={`transition-transform duration-300 ${active ? '-translate-y-0.5 scale-110' : ''}`} />
               <span className="max-w-full truncate tracking-tight">{label}</span>

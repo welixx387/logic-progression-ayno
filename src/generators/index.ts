@@ -11,6 +11,9 @@ import { syllogismsGenerator } from './syllogisms.ts'
 import { symbolsGenerator } from './symbols.ts'
 import { timeGenerator } from './time.ts'
 import type { ModuleGenerator } from './util.ts'
+import { MEMORY_NUMBER_GENERATORS } from './memory-numbers.ts'
+import { MEMORY_SCENE_GENERATORS } from './memory-scenes.ts'
+import { MEMORY_WORD_GENERATORS } from './memory-words.ts'
 import { gamesGenerator } from './games.ts'
 import { planningGenerator } from './planning.ts'
 import { decisionsGenerator } from './decisions.ts'
@@ -78,5 +81,9 @@ export const GENERATORS: Partial<Record<ModuleId, ModuleGenerator>> = {
   geography: geographyGenerator,
   safety: safetyGenerator,
 }
+
+/** Темы, генераторы которых собраны списками (по несколько тем в файле). */
+export const LISTED_GENERATORS: ModuleGenerator[] = [...MEMORY_NUMBER_GENERATORS, ...MEMORY_WORD_GENERATORS, ...MEMORY_SCENE_GENERATORS]
+for (const g of LISTED_GENERATORS) GENERATORS[g.module] = g
 
 export const GENERATED_MODULES = Object.keys(GENERATORS) as ModuleId[]

@@ -75,8 +75,30 @@ function Dialog({ lines }: { lines: { who: string; text: string }[] }) {
   )
 }
 
-/** Наглядная часть условия: ряд, таблица, диаграмма, диалог или строки. */
+function Words({ items }: { items: string[] }) {
+  return (
+    <div className="flex max-w-2xl flex-wrap gap-2">
+      {items.map((w, i) => (
+        <span key={i} style={delay(i, 60)} className="animate-pop-in rounded-xl border border-line bg-surface-2 px-3.5 py-2 text-[16px] font-semibold text-ink">
+          {w}
+        </span>
+      ))}
+    </div>
+  )
+}
+
+/** Наглядная часть условия: ряд, таблица, диаграмма, диалог, текст или строки. */
 export function TaskDisplay({ display }: { display: Display }) {
+  if (display.type === 'memorize') {
+    return (
+      <div>
+        <p className="mb-3 text-sm font-semibold text-muted">{display.title}</p>
+        <TaskDisplay display={display.content} />
+      </div>
+    )
+  }
+  if (display.type === 'text') return <p className="max-w-2xl whitespace-pre-line rounded-2xl border border-line bg-surface-2 px-5 py-4 text-[16px] leading-relaxed">{display.text}</p>
+  if (display.type === 'words') return <Words items={display.items} />
   if (display.type === 'table') return <Table head={display.head} rows={display.rows} />
   if (display.type === 'bars') return <Bars items={display.items} unit={display.unit} />
   if (display.type === 'dialog') return <Dialog lines={display.lines} />
@@ -98,13 +120,17 @@ export function TaskDisplay({ display }: { display: Display }) {
     )
   }
   if (display.type === 'grid') {
+    // Клетки со словами (план города) шире и с обычным шрифтом.
+    const words = display.rows.flat().some((c) => c.length > 3)
     return (
-      <div className="inline-grid gap-2" style={{ gridTemplateColumns: `repeat(${display.rows[0].length}, minmax(0, 1fr))` }}>
+      <div className={`inline-grid ${words ? 'gap-1.5' : 'gap-2'}`} style={{ gridTemplateColumns: `repeat(${display.rows[0].length}, minmax(0, 1fr))` }}>
         {display.rows.flat().map((cell, i) => (
           <span
             key={i}
             style={delay(i, 45)}
-            className={`flex h-14 w-16 items-center justify-center rounded-xl font-mono text-lg font-semibold sm:h-16 sm:w-20 sm:text-xl ${
+            className={`flex items-center justify-center rounded-xl font-semibold ${
+              words ? 'h-12 w-[4.5rem] px-1 text-center text-[11px] leading-tight sm:h-14 sm:w-24 sm:text-sm' : 'h-14 w-16 font-mono text-lg sm:h-16 sm:w-20 sm:text-xl'
+            } ${
               cell === '?' ? 'animate-pop-pulse border-2 border-dashed border-accent bg-accent-soft text-accent' : 'animate-pop-in border border-line bg-surface-2'
             }`}
           >
