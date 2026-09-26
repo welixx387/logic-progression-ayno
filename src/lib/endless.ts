@@ -1,4 +1,4 @@
-import GeneratorWorker from '../generators/worker.ts?worker&inline'
+import GeneratorWorker from './generator-worker'
 import type { Level, ModuleId, Task } from '../types'
 import { tasksOf } from './catalog'
 

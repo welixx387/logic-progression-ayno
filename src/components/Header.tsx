@@ -126,10 +126,10 @@ export function MobileNav({ path }: { path: string }) {
           const { to, label, icon: Icon } = item
           const active = isActive(path, item)
           return (
-            <Link key={to} to={to} className={`relative flex min-w-0 flex-col items-center gap-1 py-2.5 text-[9.5px] font-semibold transition-colors min-[400px]:text-[10.5px] sm:text-[11px] ${active ? activeText(item) : 'text-muted'}`}>
+            <Link key={to} to={to} className={`relative flex min-w-0 flex-col items-center gap-1 py-2.5 text-[9px] font-semibold transition-colors min-[380px]:text-[9.5px] min-[400px]:text-[10.5px] sm:text-[11px] ${active ? activeText(item) : 'text-muted'}`}>
               <span className={`absolute top-0 h-0.5 rounded-full bg-current transition-all duration-300 ${active ? 'w-8 opacity-100' : 'w-0 opacity-0'}`} />
               <Icon size={20} strokeWidth={active ? 2.4 : 2} className={`transition-transform duration-300 ${active ? '-translate-y-0.5 scale-110' : ''}`} />
-              <span className="max-w-full truncate tracking-tight">{label}</span>
+              <span className="max-w-full truncate tracking-tighter min-[400px]:tracking-tight">{label}</span>
             </Link>
           )
         })}
