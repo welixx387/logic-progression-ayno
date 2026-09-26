@@ -39,6 +39,27 @@ export type ModuleId =
   | 'percent'
   | 'probability'
   | 'stats'
+  | 'trends'
+  | 'growth'
+  | 'proportion'
+  | 'pie'
+  | 'pivot'
+  | 'timeseries'
+  | 'estimates'
+  | 'spread'
+  | 'normal'
+  | 'weighted'
+  | 'bayes'
+  | 'expected'
+  | 'correlation'
+  | 'simpson'
+  | 'sampling'
+  | 'funnel'
+  | 'abtest'
+  | 'loans'
+  | 'deals'
+  | 'scoring'
+  | 'fallacies'
   // Эмоциональное мышление
   | 'emotions'
   | 'recognize'
@@ -100,6 +121,8 @@ export type TaskDisplay =
   | { type: 'dialog'; lines: { who: string; text: string }[] }
   /** Абзац текста. */
   | { type: 'text'; text: string }
+  /** Круговая диаграмма: доли подписаны в легенде. */
+  | { type: 'pie'; items: { label: string; value: number }[]; unit?: string }
   /** Слова или короткие фразы «плашками». */
   | { type: 'words'; items: string[] }
   /**

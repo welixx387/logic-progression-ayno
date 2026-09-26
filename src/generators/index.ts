@@ -11,6 +11,9 @@ import { syllogismsGenerator } from './syllogisms.ts'
 import { symbolsGenerator } from './symbols.ts'
 import { timeGenerator } from './time.ts'
 import type { ModuleGenerator } from './util.ts'
+import { ANALYTICS_BUSINESS_GENERATORS } from './analytics-business.ts'
+import { ANALYTICS_DATA_GENERATORS } from './analytics-data.ts'
+import { ANALYTICS_STATS_GENERATORS } from './analytics-stats.ts'
 import { LOGIC_PUZZLE_GENERATORS } from './logic-puzzles.ts'
 import { LOGIC_REASONING_GENERATORS } from './logic-reasoning.ts'
 import { MEMORY_NUMBER_GENERATORS } from './memory-numbers.ts'
@@ -88,6 +91,9 @@ export const GENERATORS: Partial<Record<ModuleId, ModuleGenerator>> = {
 export const LISTED_GENERATORS: ModuleGenerator[] = [
   ...LOGIC_REASONING_GENERATORS,
   ...LOGIC_PUZZLE_GENERATORS,
+  ...ANALYTICS_DATA_GENERATORS,
+  ...ANALYTICS_STATS_GENERATORS,
+  ...ANALYTICS_BUSINESS_GENERATORS,
   ...MEMORY_NUMBER_GENERATORS, ...MEMORY_WORD_GENERATORS, ...MEMORY_SCENE_GENERATORS]
 for (const g of LISTED_GENERATORS) GENERATORS[g.module] = g
 

@@ -54,6 +54,9 @@ export interface ClassifyConfig {
 /** Словарь темы из списка типов. */
 export const glossaryOf = (kinds: Kind[]) => Object.fromEntries(kinds.map((k) => [k.name, k.def]))
 
+/** Без точки в конце — чтобы в кавычках не получалось «…упали.». */
+const noDot = (s: string) => s.replace(/\.$/, '')
+
 const lowerFirst = (s: string) => (/^[А-ЯЁA-Z][а-яёa-z]/.test(s) ? s[0].toLowerCase() + s.slice(1) : s)
 
 /**
@@ -67,7 +70,11 @@ export function classifyMaker(c: ClassifyConfig): Maker {
   for (const e of c.examples) if (!byName.has(e.kind)) throw new Error(`Нет типа «${e.kind}»`)
   const pool = (level: Level) => {
     const d = (e: Example) => e.d ?? 2
-    if (level === 1) return c.examples.filter((e) => d(e) === 1)
+    // Простых примеров может быть мало — тогда на первом уровне берём и средние.
+    if (level === 1) {
+      const easy = c.examples.filter((e) => d(e) === 1)
+      return easy.length >= 6 ? easy : c.examples.filter((e) => d(e) <= 2)
+    }
     if (level === 2) return c.examples.filter((e) => d(e) <= 2)
     if (level === 3) return c.examples.filter((e) => d(e) <= 2)
     return c.examples.filter((e) => d(e) >= 2)
@@ -114,9 +121,9 @@ export function classifyMaker(c: ClassifyConfig): Maker {
       prompt: c.askReverse(target.kind),
       ...opts,
       hint: `Вспомните определение: ${lowerFirst(kindNote(target.kind))}`,
-      solution: `Верный ответ: «${right}». ${target.why}\nОстальные фразы — примеры других типов: ${all
+      solution: `Верный ответ: «${noDot(right)}». ${target.why}\nОстальные фразы — примеры других типов: ${all
         .slice(1)
-        .map((x) => `«${x.text}» — ${lowerFirst(x.e.kind)}`)
+        .map((x) => `«${noDot(x.text)}» — ${lowerFirst(x.e.kind)}`)
         .join('; ')}.`,
       notes: Object.fromEntries(all.map((x) => [x.text, `${x.e.kind}. ${x.e.why}`])),
       ...(c.ref !== undefined ? { ref: c.ref } : {}),
@@ -168,7 +175,7 @@ export const dec = (x: number, digits = 2) => {
 }
 
 /** Число с разделением разрядов: 12500 → «12 500». */
-export const big = (x: number) => (Math.abs(x) >= 10000 ? x.toLocaleString('ru-RU').replace(/ /g, ' ') : String(x)).replace('-', '−')
+export const big = (x: number) => (!Number.isInteger(x) ? dec(x, 4) : (Math.abs(x) >= 10000 ? x.toLocaleString('ru-RU').replace(/\s/g, ' ') : String(x)).replace('-', '−'))
 
 /** Задание на память: материал на seconds секунд, затем вопрос. */
 export function memorize(seconds: number, title: string, content: TaskDisplay): TaskDisplay {

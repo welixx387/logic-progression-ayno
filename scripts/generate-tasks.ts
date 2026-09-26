@@ -116,6 +116,10 @@ for (const t of tasks) {
     }
   }
   if (t.kind === 'number' && !/^-?\d+(\.\d+)?$/.test(t.answer)) problems.push(`${t.id}: ответ не число: ${t.answer}`)
+  // В текстах — запятая в дробях и настоящий минус: «2,5» и «−3», а не «2.5» и «-3».
+  const text = [t.prompt, t.solution, t.hint ?? '', ...(t.options ?? []), ...Object.values(t.notes ?? {})].join('\n')
+  if (/\d\.\d/.test(text)) problems.push(`${t.id}: десятичная точка вместо запятой`)
+  if (/(^|[\s(:=≈])-\d/m.test(text)) problems.push(`${t.id}: дефис вместо минуса`)
 }
 
 if (problems.length) {

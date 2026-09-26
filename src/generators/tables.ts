@@ -248,7 +248,7 @@ function relative(rng: Rng, index: number): Draft | null {
     const bestAbs = Math.max(...abs)
     const i = rel.indexOf(bestRel)
     if (rel.filter((x) => Math.abs(x - bestRel) < 1e-9).length > 1 || abs.indexOf(bestAbs) === i || bestRel <= 0) return null
-    const pct = (x: number) => `${Math.round(x * 100)}%`
+    const pct = (x: number) => `${Math.round(x * 100)}%`.replace('-', '−')
     return {
       kind: 'choice',
       prompt: `${c.title}. У какого ${c.of} значение выросло сильнее всего в процентах с месяца «${t.colNames[j1]}» по месяц «${t.colNames[j2]}»?`,

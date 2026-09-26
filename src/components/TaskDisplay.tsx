@@ -75,6 +75,41 @@ function Dialog({ lines }: { lines: { who: string; text: string }[] }) {
   )
 }
 
+const PIE_COLORS = ['#5B4BFF', '#0EA5E9', '#F59E0B', '#EC4899', '#10B981', '#8B5CF6', '#EF4444', '#64748B']
+
+/** Круговая диаграмма с легендой: сектора рисуются дугами SVG. */
+function Pie({ items, unit }: { items: { label: string; value: number }[]; unit?: string }) {
+  const total = items.reduce((s, i) => s + i.value, 0)
+  let angle = -Math.PI / 2
+  const arcs = items.map((it, i) => {
+    const a = (it.value / total) * Math.PI * 2
+    const [x1, y1] = [50 + 40 * Math.cos(angle), 50 + 40 * Math.sin(angle)]
+    angle += a
+    const [x2, y2] = [50 + 40 * Math.cos(angle), 50 + 40 * Math.sin(angle)]
+    const d = items.length === 1 ? 'M50 10 A40 40 0 1 1 49.99 10 Z' : `M50 50 L${x1} ${y1} A40 40 0 ${a > Math.PI ? 1 : 0} 1 ${x2} ${y2} Z`
+    return <path key={i} d={d} fill={PIE_COLORS[i % PIE_COLORS.length]} stroke="rgb(var(--surface))" strokeWidth="0.8" className="animate-pop-in origin-center [transform-box:fill-box]" style={delay(i, 70)} />
+  })
+  return (
+    <div className="flex flex-wrap items-center gap-5">
+      <svg viewBox="0 0 100 100" className="h-40 w-40 shrink-0" role="img" aria-label={items.map((i) => `${i.label}: ${i.value}${unit ?? ''}`).join(', ')}>
+        {arcs}
+      </svg>
+      <ul className="space-y-1.5 text-[15px]">
+        {items.map((it, i) => (
+          <li key={it.label} className="flex items-center gap-2">
+            <span className="h-3 w-3 shrink-0 rounded-sm" style={{ background: PIE_COLORS[i % PIE_COLORS.length] }} />
+            <span className="font-semibold">{it.label}</span>
+            <span className="font-mono tabular-nums text-muted">
+              {it.value}
+              {unit ?? ''}
+            </span>
+          </li>
+        ))}
+      </ul>
+    </div>
+  )
+}
+
 function Words({ items }: { items: string[] }) {
   return (
     <div className="flex max-w-2xl flex-wrap gap-2">
@@ -99,6 +134,7 @@ export function TaskDisplay({ display }: { display: Display }) {
   }
   if (display.type === 'text') return <p className="max-w-2xl whitespace-pre-line rounded-2xl border border-line bg-surface-2 px-5 py-4 text-[16px] leading-relaxed">{display.text}</p>
   if (display.type === 'words') return <Words items={display.items} />
+  if (display.type === 'pie') return <Pie items={display.items} unit={display.unit} />
   if (display.type === 'table') return <Table head={display.head} rows={display.rows} />
   if (display.type === 'bars') return <Bars items={display.items} unit={display.unit} />
   if (display.type === 'dialog') return <Dialog lines={display.lines} />
