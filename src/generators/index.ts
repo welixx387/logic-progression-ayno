@@ -19,6 +19,8 @@ import { LOGIC_REASONING_GENERATORS } from './logic-reasoning.ts'
 import { MEMORY_NUMBER_GENERATORS } from './memory-numbers.ts'
 import { MEMORY_SCENE_GENERATORS } from './memory-scenes.ts'
 import { MEMORY_WORD_GENERATORS } from './memory-words.ts'
+import { EMOTIONAL_SELF_GENERATORS } from './emotional-self.ts'
+import { EMOTIONAL_SOCIAL_GENERATORS } from './emotional-social.ts'
 import { STRATEGY_CHOICE_GENERATORS } from './strategy-choice.ts'
 import { STRATEGY_GAME_GENERATORS } from './strategy-games.ts'
 import { STRATEGY_PLAN_GENERATORS } from './strategy-plan.ts'
@@ -100,6 +102,8 @@ export const LISTED_GENERATORS: ModuleGenerator[] = [
   ...STRATEGY_PLAN_GENERATORS,
   ...STRATEGY_CHOICE_GENERATORS,
   ...STRATEGY_GAME_GENERATORS,
+  ...EMOTIONAL_SELF_GENERATORS,
+  ...EMOTIONAL_SOCIAL_GENERATORS,
   ...MEMORY_NUMBER_GENERATORS,
   ...MEMORY_WORD_GENERATORS,
   ...MEMORY_SCENE_GENERATORS,

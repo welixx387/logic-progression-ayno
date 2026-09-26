@@ -5,6 +5,7 @@ import { LOGIC_EXTRA } from './modules-logic-extra'
 import { MEMORY_MODULES } from './modules-memory'
 import { ANALYTICS_MODULES } from './modules-analytics'
 import { EMOTIONAL_MODULES } from './modules-emotional'
+import { EMOTIONAL_EXTRA } from './modules-emotional-extra'
 import { STRATEGY_MODULES } from './modules-strategy'
 import { STRATEGY_EXTRA } from './modules-strategy-extra'
 
@@ -406,6 +407,7 @@ export const MODULES: ModuleInfo[] = [
   ...ANALYTICS_MODULES,
   ...ANALYTICS_EXTRA,
   ...EMOTIONAL_MODULES,
+  ...EMOTIONAL_EXTRA,
   ...MEMORY_MODULES,
   ...ACADEMIC_MODULES,
 ]
