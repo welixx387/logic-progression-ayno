@@ -1,5 +1,6 @@
 import type { CategoryId, ModuleId, TaskDisplay } from '../types'
 import { ACADEMIC_MODULES } from './modules-academic'
+import { LOGIC_EXTRA } from './modules-logic-extra'
 import { MEMORY_MODULES } from './modules-memory'
 import { ANALYTICS_MODULES } from './modules-analytics'
 import { EMOTIONAL_MODULES } from './modules-emotional'
@@ -396,7 +397,8 @@ const LOGIC_MODULES: Omit<ModuleInfo, 'category'>[] = [
 ]
 
 export const MODULES: ModuleInfo[] = [
-  ...LOGIC_MODULES.map((m) => ({ ...m, category: 'logic' as const, noTest: m.id === 'zebra' })),
+  // «Нестандартные задачи» — в конце списка логики.
+  ...[...LOGIC_MODULES.filter((m) => m.id !== 'classic'), ...LOGIC_EXTRA, ...LOGIC_MODULES.filter((m) => m.id === 'classic')].map((m) => ({ ...m, category: 'logic' as const, noTest: m.id === 'zebra' })),
   ...STRATEGY_MODULES,
   ...ANALYTICS_MODULES,
   ...EMOTIONAL_MODULES,
