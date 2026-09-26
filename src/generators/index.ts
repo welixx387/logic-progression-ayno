@@ -19,6 +19,9 @@ import { LOGIC_REASONING_GENERATORS } from './logic-reasoning.ts'
 import { MEMORY_NUMBER_GENERATORS } from './memory-numbers.ts'
 import { MEMORY_SCENE_GENERATORS } from './memory-scenes.ts'
 import { MEMORY_WORD_GENERATORS } from './memory-words.ts'
+import { STRATEGY_CHOICE_GENERATORS } from './strategy-choice.ts'
+import { STRATEGY_GAME_GENERATORS } from './strategy-games.ts'
+import { STRATEGY_PLAN_GENERATORS } from './strategy-plan.ts'
 import { gamesGenerator } from './games.ts'
 import { planningGenerator } from './planning.ts'
 import { decisionsGenerator } from './decisions.ts'
@@ -94,7 +97,13 @@ export const LISTED_GENERATORS: ModuleGenerator[] = [
   ...ANALYTICS_DATA_GENERATORS,
   ...ANALYTICS_STATS_GENERATORS,
   ...ANALYTICS_BUSINESS_GENERATORS,
-  ...MEMORY_NUMBER_GENERATORS, ...MEMORY_WORD_GENERATORS, ...MEMORY_SCENE_GENERATORS]
+  ...STRATEGY_PLAN_GENERATORS,
+  ...STRATEGY_CHOICE_GENERATORS,
+  ...STRATEGY_GAME_GENERATORS,
+  ...MEMORY_NUMBER_GENERATORS,
+  ...MEMORY_WORD_GENERATORS,
+  ...MEMORY_SCENE_GENERATORS,
+]
 for (const g of LISTED_GENERATORS) GENERATORS[g.module] = g
 
 export const GENERATED_MODULES = Object.keys(GENERATORS) as ModuleId[]

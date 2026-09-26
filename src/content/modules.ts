@@ -6,6 +6,7 @@ import { MEMORY_MODULES } from './modules-memory'
 import { ANALYTICS_MODULES } from './modules-analytics'
 import { EMOTIONAL_MODULES } from './modules-emotional'
 import { STRATEGY_MODULES } from './modules-strategy'
+import { STRATEGY_EXTRA } from './modules-strategy-extra'
 
 export interface TheorySection {
   title: string
@@ -401,6 +402,7 @@ export const MODULES: ModuleInfo[] = [
   // «Нестандартные задачи» — в конце списка логики.
   ...[...LOGIC_MODULES.filter((m) => m.id !== 'classic'), ...LOGIC_EXTRA, ...LOGIC_MODULES.filter((m) => m.id === 'classic')].map((m) => ({ ...m, category: 'logic' as const, noTest: m.id === 'zebra' })),
   ...STRATEGY_MODULES,
+  ...STRATEGY_EXTRA,
   ...ANALYTICS_MODULES,
   ...ANALYTICS_EXTRA,
   ...EMOTIONAL_MODULES,
